@@ -1,7 +1,7 @@
 import uuid
 
 from associations import user_role
-from sqlalchemy import Column, DateTime, String, func
+from sqlalchemy import Column, Date, DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy_utils.email import EmailType
@@ -25,6 +25,7 @@ class User(Base):
     first_name = Column(String(50))
     last_name = Column(String(50))
     email = Column(EmailType)
+    birthdate = Column(Date)
     created_at = Column(DateTime, default=func.now())
     roles = relationship("Role", secondary=user_role, backref="users")
     login_history = relationship("LoginHistory", back_populates="user")
