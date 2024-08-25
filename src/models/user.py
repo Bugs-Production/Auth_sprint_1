@@ -1,13 +1,13 @@
 import uuid
 
-from associations import user_role
 from sqlalchemy import Column, Date, DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from sqlalchemy_utils.email import EmailType
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from db.postgres import Base
+from models.associations import user_role
+from models.sqlalchemy_utils.email import EmailType
 
 
 class User(Base):
