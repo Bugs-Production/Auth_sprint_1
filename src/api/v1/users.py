@@ -47,7 +47,7 @@ async def get_user_info(
 @router.put("/{user_id}", response_model=UpdateUserSchema)
 async def put_user_info(
     user_id: UUID,
-    request_data: UpdateUserSchema = Depends(UpdateUserSchema),
+    request_data: UpdateUserSchema,
     auth_data: dict[str, Any] = Depends(authenticate_user),
     user_service: UserService = Depends(get_user_service),
 ):

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, EmailStr, model_validator
@@ -21,6 +21,7 @@ class UpdateUserSchema(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr | None = None
+    birthdate: date | None = None
 
     @model_validator(mode="after")
     def check_at_least_one_field_exists(self):
