@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from schemas.mixins import IdMixin
 
 
-class RolesSchema(IdMixin):
+class RoleSchema(IdMixin):
     title: str
 
 
