@@ -2,10 +2,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
+from fastapi_pagination import add_pagination
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 
+from api.v1 import roles
 from core.config import settings
 from db import postgres, redis
 
@@ -30,3 +32,6 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
     default_response_class=ORJSONResponse,
 )
+add_pagination(app)
+
+app.include_router(roles.router, prefix="/api/v1/roles", tags=["roles"])
