@@ -27,9 +27,9 @@ class User(Base):
     email = Column(EmailType)
     birthdate = Column(Date)
     created_at = Column(DateTime, default=func.now())
-    roles = relationship("models.roles.Role", secondary=user_role, backref="users")
-    login_history = relationship("models.login_history.LoginHistory", back_populates="user")
-    refresh_tokens = relationship("models.refresh_token.RefreshToken", back_populates="user")
+    roles = relationship("Role", secondary=user_role, backref="users")
+    login_history = relationship("LoginHistory", back_populates="user")
+    refresh_tokens = relationship("RefreshToken", back_populates="user")
 
     def __init__(
         self, login: str, password: str, first_name: str, last_name: str
