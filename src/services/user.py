@@ -5,18 +5,18 @@ from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.v1.models import User
+import api.v1.models as pydantic_models
+import models as db_models
 from db.postgres import get_postgres
-from models.user import User as DBUser
 
 
 class UserService:
     def __init__(self, postgres_session: AsyncSession):
         self.postgres_session = postgres_session
 
-    async def get_user_info(self, user_id: UUID) -> User | None:
+    async def get_user_info(self, user_id: UUID) -> pydantic_models.User | None:
         async with self.postgres_session() as session:
-            results = await session.scalars(select(DBUser).where(DBUser.id == user_id))
+            results = await session.scalars(select(db_models.User).where(db_models.User.id == user_id))
             if not results:
                 return None
             return results.first()
