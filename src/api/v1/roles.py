@@ -66,7 +66,7 @@ async def create_roles(
         raise e
 
 
-@router.post(
+@router.delete(
     "/{role_id}",
     summary="Удаление роли",
     description="Удаление роли по ee id",
@@ -93,5 +93,35 @@ async def delete_roles(
     try:
         await roles_service.delete_role(role_id)
         return {"detail": "Role deleted successfully"}
+    except HTTPException as e:
+        raise e
+
+
+@router.put(
+    "/{role_id}",
+    response_model=RoleCreateSchema,
+    summary="Обновление роли",
+    response_description="Обновление роли по ee id",
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Успешное изменение.",
+            "content": {"application/json": {"example": {"detail": "string"}}},
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Отсутствие id у роли.",
+            "content": {"application/json": {"example": {"detail": "Role not found."}}},
+        },
+    },
+)
+async def update_roles(
+    role_id: str,
+    role: RoleCreateSchema,
+    db: AsyncSession = Depends(get_db),
+) -> RoleCreateSchema:
+    roles_service = RolesService(db)
+
+    try:
+        updated_role = await roles_service.change_role(role, role_id)
+        return updated_role
     except HTTPException as e:
         raise e

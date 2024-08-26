@@ -23,6 +23,10 @@ class AbstractRoleService(ABC):
     async def delete_role(self, role_id: str) -> None:
         pass
 
+    @abstractmethod
+    async def change_role(self, role: RoleCreateSchema, role_id: str) -> Role:
+        pass
+
 
 class RolesService(AbstractRoleService):
     def __init__(self, db: AsyncSession):
@@ -33,7 +37,7 @@ class RolesService(AbstractRoleService):
         result = await self.db.execute(select(Role))
         return result.scalars().all()
 
-    async def create_role(self, role: RoleCreateSchema) -> Role:
+    async def create_role(self, role: RoleCreateSchema) -> Role | HTTPException:
         """Создание роли"""
         new_role = Role(title=role.title)
 
@@ -64,3 +68,30 @@ class RolesService(AbstractRoleService):
 
         await self.db.delete(role)
         await self.db.commit()
+
+    async def change_role(
+        self, role: RoleCreateSchema, role_id: str
+    ) -> Role | HTTPException:
+        """Изменение роли"""
+        role_uuid = UUID(role_id)
+
+        # находим запись по id
+        result = await self.db.execute(select(Role).filter_by(id=role_uuid))
+        old_role = result.scalars().first()
+
+        if old_role is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Role not found.",
+            )
+
+        if old_role.title == role.title:
+            return old_role
+
+        old_role.title = role.title
+
+        self.db.add(old_role)
+        await self.db.commit()
+        await self.db.refresh(old_role)
+
+        return old_role
