@@ -28,6 +28,7 @@ async def get_user_info(
 
     return user
 
+
 @router.get("/{user_id}/login_history", response_model=Page[UserLoginHistorySchema])
 async def get_user_info(
     user_id: UUID,

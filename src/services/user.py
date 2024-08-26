@@ -59,10 +59,13 @@ class UserService:
                 raise ObjectNotFoundError
 
             login_history = await session.scalars(
-                select(db_models.LoginHistory).where(db_models.LoginHistory.user_id == user_id)
+                select(db_models.LoginHistory).where(
+                    db_models.LoginHistory.user_id == user_id
+                )
             )
 
             return login_history.all()
+
 
 @lru_cache()
 def get_user_service(

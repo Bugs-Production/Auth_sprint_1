@@ -22,4 +22,5 @@ class Settings(BaseSettings):
 
     jwt_secret_key: str = Field("my_secret_key", alias="JWT_SECRET_KEY")
 
+
 settings = Settings()

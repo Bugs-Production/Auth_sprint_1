@@ -29,6 +29,7 @@ class UpdateUserSchema(BaseModel):
             raise ValueError("At least one field required")
         return self
 
+
 class UserLoginHistorySchema(BaseModel):
     event_date: datetime
     success: bool
