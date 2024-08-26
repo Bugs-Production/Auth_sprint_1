@@ -27,10 +27,23 @@ class AbstractRoleService(ABC):
     async def change_role(self, role: RoleCreateSchema, role_id: str) -> Role:
         pass
 
+    @abstractmethod
+    async def get_role_by_id(self, role_id: str) -> Role:
+        pass
+
 
 class RolesService(AbstractRoleService):
     def __init__(self, db: AsyncSession):
         self.db = db
+
+    async def get_role_by_id(self, role_id: str) -> Role:
+        """Поиск роли по id"""
+        role_uuid = UUID(role_id)
+
+        result = await self.db.execute(select(Role).filter_by(id=role_uuid))
+        role = result.scalars().first()
+
+        return role
 
     async def get_roles_list(self) -> Role | None:
         """Получение всех ролей"""
@@ -54,11 +67,7 @@ class RolesService(AbstractRoleService):
 
     async def delete_role(self, role_id: str) -> None:
         """Удаление роли"""
-        role_uuid = UUID(role_id)
-
-        # находим запись по id
-        result = await self.db.execute(select(Role).filter_by(id=role_uuid))
-        role = result.scalars().first()
+        role = await self.get_role_by_id(role_id)
 
         if role is None:
             raise HTTPException(
@@ -73,11 +82,7 @@ class RolesService(AbstractRoleService):
         self, role: RoleCreateSchema, role_id: str
     ) -> Role | HTTPException:
         """Изменение роли"""
-        role_uuid = UUID(role_id)
-
-        # находим запись по id
-        result = await self.db.execute(select(Role).filter_by(id=role_uuid))
-        old_role = result.scalars().first()
+        old_role = await self.get_role_by_id(role_id)
 
         if old_role is None:
             raise HTTPException(
