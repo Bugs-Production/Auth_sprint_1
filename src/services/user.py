@@ -50,6 +50,19 @@ class UserService:
 
             return user
 
+    async def get_user_history(self, user_id: UUID) -> list[db_models.LoginHistory]:
+        async with self.postgres_session() as session:
+            results = await session.scalars(
+                select(db_models.User).where(db_models.User.id == user_id)
+            )
+            if not results:
+                raise ObjectNotFoundError
+
+            login_history = await session.scalars(
+                select(db_models.LoginHistory).where(db_models.LoginHistory.user_id == user_id)
+            )
+
+            return login_history.all()
 
 @lru_cache()
 def get_user_service(

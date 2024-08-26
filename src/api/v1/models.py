@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, EmailStr, model_validator
@@ -26,3 +27,7 @@ class UpdateUserSchema(BaseModel):
         if not self.model_fields_set:
             raise ValueError("At least one field required")
         return self
+
+class UserLoginHistorySchema(BaseModel):
+    event_date: datetime
+    success: bool
