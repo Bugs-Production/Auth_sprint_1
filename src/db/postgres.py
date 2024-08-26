@@ -16,5 +16,5 @@ async_session: Optional[AsyncSession] = None
 dsn = settings.postgres_url
 
 
-async def get_postgres() -> AsyncSession:
+async def get_postgres_session() -> AsyncSession:
     return async_session
