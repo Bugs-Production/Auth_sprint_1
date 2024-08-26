@@ -21,7 +21,7 @@ class RefreshToken(Base):
     token = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=func.now())
     expires_at = Column(DateTime, nullable=False)
-    user = relationship("User", back_populates="refresh_tokens")
+    user = relationship("models.user.User", back_populates="refresh_tokens")
 
     def __repr__(self) -> str:
         return f"<RefreshToken {self.token} for User {self.user_id}>"
