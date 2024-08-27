@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     redis_port: int = Field(6379, alias="REDIS_PORT")
 
     jwt_secret_key: str = Field("my_secret_key", alias="JWT_SECRET_KEY")
+    access_token_exp_hours: int = Field(1, alias="ACCESS_TOKEN_EXP_HOURS")
+    refresh_token_exp_days: int = Field(10, alias="REFRESH_TOKEN_EXP_DAYS")
 
 
 settings = Settings()
