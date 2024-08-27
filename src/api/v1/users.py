@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi_pagination import Page, paginate
 
 from api.v1.auth import authenticate_user, check_allow_affect_user
-from api.v1.models import UserSchema, UpdateUserSchema, UserLoginHistorySchema
+from schemas.users import UserSchema, UpdateUserSchema, UserLoginHistorySchema
 from services.exceptions import ConflictError, ObjectNotFoundError
 from services.user import UserService, get_user_service
 

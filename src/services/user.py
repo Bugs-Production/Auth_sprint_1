@@ -6,9 +6,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import api.v1.models as pydantic_models
 import models as db_models
 from db.postgres import get_postgres_session
+from schemas.users import UpdateUserSchema
 from services.exceptions import ObjectNotFoundError, ConflictError
 
 
@@ -27,7 +27,7 @@ class UserService:
             return results.first()
 
     async def update_user(
-        self, user_id: UUID, user_data: pydantic_models.UpdateUserSchema
+        self, user_id: UUID, user_data: UpdateUserSchema
     ) -> db_models.User | None:
         async with self.postgres_session() as session:
             results = await session.scalars(
