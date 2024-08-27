@@ -10,6 +10,7 @@ class UserSchema(BaseModel):
     first_name: str | None
     last_name: str | None
     email: EmailStr | None
+    birthdate: date | None = None
 
     class Config:
         from_attributes = True
