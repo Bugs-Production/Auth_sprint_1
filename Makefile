@@ -4,7 +4,7 @@ build:
 
 .PHONY: start
 start:
-	docker-compose up -d
+	docker-compose up -d --build
 
 .PHONY: stop
 stop:
@@ -12,7 +12,7 @@ stop:
 
 .PHONY: format
 format:
-	black . && isort .
+	black . && isort . --skip src/models/__init__.py
 
 .PHONY: makemigrations
 makemigrations:

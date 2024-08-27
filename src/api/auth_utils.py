@@ -3,7 +3,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 import jwt
-from fastapi import HTTPException, Header
+from fastapi import Header, HTTPException
 
 from core.config import settings
 
