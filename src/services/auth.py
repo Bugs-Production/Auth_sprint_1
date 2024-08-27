@@ -4,6 +4,7 @@ from functools import lru_cache
 import jwt
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import delete, exists, select
 
 import models as db_models
 from core.config import settings
@@ -57,6 +58,38 @@ class AuthService:
         await self.save_refresh_token(user_id, refresh_token, valid_till)
 
         return refresh_token
+
+    async def is_refresh_token_valid(self, refresh_token: str) -> bool:
+        async with self.postgres_session() as session:
+            return await session.execute(
+                select(
+                    exists(db_models.RefreshToken).where(
+                        db_models.RefreshToken.token == refresh_token,
+                        db_models.RefreshToken.expires_at >= datetime.now(),
+                    )
+                )
+            )
+
+    async def update_refresh_token(
+        self,
+        user_id: str,
+        refresh_token: str,
+        user_roles: list[str],
+    ) -> tuple[str, str]:
+        await self.invalidate_refresh_token(refresh_token)
+        refresh_token_new = await self.emit_refresh_token(user_id)
+        access_token = await self.generate_access_token(user_id, user_roles)
+
+        return refresh_token_new, access_token
+
+    async def invalidate_refresh_token(self, refresh_token: str):
+        async with self.postgres_session() as session:
+            await session.execute(
+                delete(db_models.RefreshToken).where(
+                    db_models.RefreshToken.token == refresh_token
+                )
+            )
+            await session.commit()
 
 
 @lru_cache()

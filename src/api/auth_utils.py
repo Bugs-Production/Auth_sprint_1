@@ -20,6 +20,17 @@ def authenticate_user(
     return payload
 
 
+def decode_refresh_token(refresh_token):
+    try:
+        payload = jwt.decode(
+            refresh_token, settings.jwt_secret_key, algorithms=["HS256"]
+        )
+    except jwt.exceptions.InvalidTokenError:
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
+
+    return payload
+
+
 def check_allow_affect_user(auth_data: dict[str, Any], user_id: UUID):
     """
     Проверяет может ли пользователь, отправивший запрос,
