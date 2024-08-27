@@ -20,5 +20,7 @@ class Settings(BaseSettings):
     redis_host: str = Field("127.0.0.1", alias="REDIS_HOST")
     redis_port: int = Field(6379, alias="REDIS_PORT")
 
+    jwt_secret_key: str = Field("my_secret_key", alias="JWT_SECRET_KEY")
+
 
 settings = Settings()
