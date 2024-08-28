@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import models as db_models
 from db.postgres import get_postgres_session
 from schemas.users import UpdateUserSchema
-from services.exceptions import ObjectNotFoundError, ConflictError
+from services.exceptions import ConflictError, ObjectNotFoundError
 
 
 class UserService:

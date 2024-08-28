@@ -1,9 +1,6 @@
 from typing import Optional
 
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    AsyncEngine,
-)
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.orm import declarative_base
 
 from core.config import settings

@@ -1,10 +1,11 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import Page, paginate
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.postgres import get_db
+from api.auth_utils import authenticate_user, check_admin
 from schemas.roles import RoleCreateSchema, RoleSchema
-from services.role import RolesService
+from services.role import RolesService, get_role_service
 
 router = APIRouter()
 
@@ -17,10 +18,12 @@ router = APIRouter()
     response_description="Список ролей",
 )
 async def roles(
-    db: AsyncSession = Depends(get_db),
+    auth_data: dict[str, Any] = Depends(authenticate_user),
+    role_service: RolesService = Depends(get_role_service),
 ) -> Page[RoleSchema]:
-    roles_service = RolesService(db)
-    roles_list = await roles_service.get_roles_list()
+    check_admin(auth_data)
+
+    roles_list = await role_service.get_roles_list()
     return paginate(roles_list)
 
 
@@ -37,6 +40,14 @@ async def roles(
                     "example": {"detail": "Role with title admin already exists."}
                 }
             },
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Ошибка валидации токена",
+            "content": {"application/json": {"example": {"detail": "invalid token"}}},
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "Доступ запрещен",
+            "content": {"application/json": {"example": {"detail": "Forbidden"}}},
         },
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
             "description": "Ошибка валидации данных.",
@@ -56,11 +67,12 @@ async def roles(
 )
 async def create_roles(
     role: RoleCreateSchema,
-    db: AsyncSession = Depends(get_db),
+    auth_data: dict[str, Any] = Depends(authenticate_user),
+    role_service: RolesService = Depends(get_role_service),
 ) -> RoleCreateSchema:
-    roles_service = RolesService(db)
+    check_admin(auth_data)
     try:
-        new_role = await roles_service.create_role(role)
+        new_role = await role_service.create_role(role)
         return new_role
     except HTTPException as e:
         raise e
@@ -79,6 +91,14 @@ async def create_roles(
                 }
             },
         },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Ошибка валидации токена",
+            "content": {"application/json": {"example": {"detail": "invalid token"}}},
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "Доступ запрещен",
+            "content": {"application/json": {"example": {"detail": "Forbidden"}}},
+        },
         status.HTTP_404_NOT_FOUND: {
             "description": "Отсутствие id у роли.",
             "content": {"application/json": {"example": {"detail": "Role not found."}}},
@@ -87,11 +107,12 @@ async def create_roles(
 )
 async def delete_roles(
     role_id: str,
-    db: AsyncSession = Depends(get_db),
+    auth_data: dict[str, Any] = Depends(authenticate_user),
+    role_service: RolesService = Depends(get_role_service),
 ) -> dict:
-    roles_service = RolesService(db)
+    check_admin(auth_data)
     try:
-        await roles_service.delete_role(role_id)
+        await role_service.delete_role(role_id)
         return {"detail": "Role deleted successfully"}
     except HTTPException as e:
         raise e
@@ -107,6 +128,14 @@ async def delete_roles(
             "description": "Успешное изменение.",
             "content": {"application/json": {"example": {"detail": "string"}}},
         },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Ошибка валидации токена",
+            "content": {"application/json": {"example": {"detail": "invalid token"}}},
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "Доступ запрещен",
+            "content": {"application/json": {"example": {"detail": "Forbidden"}}},
+        },
         status.HTTP_404_NOT_FOUND: {
             "description": "Отсутствие id у роли.",
             "content": {"application/json": {"example": {"detail": "Role not found."}}},
@@ -116,12 +145,12 @@ async def delete_roles(
 async def update_roles(
     role_id: str,
     role: RoleCreateSchema,
-    db: AsyncSession = Depends(get_db),
+    auth_data: dict[str, Any] = Depends(authenticate_user),
+    role_service: RolesService = Depends(get_role_service),
 ) -> RoleCreateSchema:
-    roles_service = RolesService(db)
-
+    check_admin(auth_data)
     try:
-        updated_role = await roles_service.change_role(role, role_id)
+        updated_role = await role_service.change_role(role, role_id)
         return updated_role
     except HTTPException as e:
         raise e

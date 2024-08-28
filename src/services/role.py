@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
+from functools import lru_cache
 from uuid import UUID
 
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from db.postgres import get_postgres_session
 from models.roles import Role
 from schemas.roles import RoleCreateSchema, RoleSchema
 
@@ -33,37 +35,38 @@ class AbstractRoleService(ABC):
 
 
 class RolesService(AbstractRoleService):
-    def __init__(self, db: AsyncSession):
-        self.db = db
+    def __init__(self, postgres_session: AsyncSession):
+        self.postgres_session = postgres_session
 
     async def get_role_by_id(self, role_id: str) -> Role:
         """Поиск роли по id"""
-        role_uuid = UUID(role_id)
+        async with self.postgres_session() as session:
+            role_uuid = UUID(role_id)
 
-        result = await self.db.execute(select(Role).filter_by(id=role_uuid))
-        role = result.scalars().first()
-
-        return role
+            result = await session.scalars(select(Role).filter_by(id=role_uuid))
+            return result.first()
 
     async def get_roles_list(self) -> Role | None:
         """Получение всех ролей"""
-        result = await self.db.execute(select(Role))
-        return result.scalars().all()
+        async with self.postgres_session() as session:
+            result = await session.scalars(select(Role))
+            return result.all()
 
     async def create_role(self, role: RoleCreateSchema) -> Role | HTTPException:
         """Создание роли"""
         new_role = Role(title=role.title)
 
-        try:
-            self.db.add(new_role)
-            await self.db.commit()
-            await self.db.refresh(new_role)
-            return new_role
-        except IntegrityError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Role with title {role.title} already exists",
-            )
+        async with self.postgres_session() as session:
+            try:
+                session.add(new_role)
+                await session.commit()
+                await session.refresh(new_role)
+                return new_role
+            except IntegrityError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Role with title {role.title} already exists",
+                )
 
     async def delete_role(self, role_id: str) -> None:
         """Удаление роли"""
@@ -75,8 +78,9 @@ class RolesService(AbstractRoleService):
                 detail="Role not found.",
             )
 
-        await self.db.delete(role)
-        await self.db.commit()
+        async with self.postgres_session() as session:
+            await session.delete(role)
+            await session.commit()
 
     async def change_role(
         self, role: RoleCreateSchema, role_id: str
@@ -95,8 +99,16 @@ class RolesService(AbstractRoleService):
 
         old_role.title = role.title
 
-        self.db.add(old_role)
-        await self.db.commit()
-        await self.db.refresh(old_role)
+        async with self.postgres_session() as session:
+            session.add(old_role)
+            await session.commit()
+            await session.refresh(old_role)
 
-        return old_role
+            return old_role
+
+
+@lru_cache()
+def get_role_service(
+    postgres_session: AsyncSession = Depends(get_postgres_session),
+) -> RolesService:
+    return RolesService(postgres_session)
