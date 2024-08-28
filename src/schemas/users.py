@@ -1,7 +1,7 @@
-from datetime import datetime, date
+from datetime import date, datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, EmailStr, model_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 class UserSchema(BaseModel):
