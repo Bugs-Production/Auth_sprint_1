@@ -1,6 +1,8 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+JWT_ALGORITHM = "HS256"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(

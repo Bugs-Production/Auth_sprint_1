@@ -5,26 +5,19 @@ from uuid import UUID
 import jwt
 from fastapi import Header, HTTPException
 
-from core.config import settings
+from core.config import JWT_ALGORITHM, settings
 
 
 def authenticate_user(
     authorization: Annotated[str | None, Header()] = None,
 ) -> dict[str, Any]:
     token = authorization.replace("Bearer ", "")
+    return decode_token_or_401(token)
+
+
+def decode_token_or_401(token: str) -> dict[str, Any]:
     try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=["HS256"])
-    except jwt.exceptions.InvalidTokenError:
-        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
-
-    return payload
-
-
-def decode_refresh_token(refresh_token):
-    try:
-        payload = jwt.decode(
-            refresh_token, settings.jwt_secret_key, algorithms=["HS256"]
-        )
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[JWT_ALGORITHM])
     except jwt.exceptions.InvalidTokenError:
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
 

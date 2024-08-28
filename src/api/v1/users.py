@@ -41,7 +41,7 @@ async def get_user_info(
     check_allow_affect_user(auth_data, user_id)
 
     try:
-        user = await user_service.get_user(user_id)
+        user = await user_service.get_user_by_id(user_id)
     except ObjectNotFoundError:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="user not found")
 

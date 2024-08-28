@@ -17,19 +17,31 @@ class UserService:
     def __init__(self, postgres_session: AsyncSession):
         self.postgres_session = postgres_session
 
-    async def get_user(self, user_id: UUID) -> db_models.User | None:
+    async def get_user_by_id(self, user_id: UUID) -> db_models.User:
         async with self.postgres_session() as session:
             results = await session.scalars(
                 select(db_models.User).where(db_models.User.id == user_id)
             )
-            if not results:
+            user = results.first()
+            if not user:
                 raise ObjectNotFoundError
 
-            return results.first()
+            return user
+
+    async def get_user_by_login(self, login: str) -> db_models.User:
+        async with self.postgres_session() as session:
+            results = await session.scalars(
+                select(db_models.User).where(db_models.User.login == login)
+            )
+            user = results.first()
+            if not user:
+                raise ObjectNotFoundError
+
+            return user
 
     async def update_user(
         self, user_id: UUID, user_data: UpdateUserSchema
-    ) -> db_models.User | None:
+    ) -> db_models.User:
         async with self.postgres_session() as session:
             results = await session.scalars(
                 select(db_models.User).where(db_models.User.id == user_id)
@@ -81,7 +93,7 @@ class UserService:
 
             return user
 
-    async def get_user_roles(self, user_id):
+    async def get_user_roles(self, user_id: str) -> list[db_models.Role]:
         async with self.postgres_session() as session:
             results = await session.execute(
                 select(db_models.User)

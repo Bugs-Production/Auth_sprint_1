@@ -7,10 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import delete, exists, select
 
 import models as db_models
-from core.config import settings
+from core.config import JWT_ALGORITHM, settings
 from db.postgres import get_postgres_session
-
-JWT_ALGORITHM = "HS256"
 
 
 class AuthService:
@@ -87,6 +85,16 @@ class AuthService:
             await session.execute(
                 delete(db_models.RefreshToken).where(
                     db_models.RefreshToken.token == refresh_token
+                )
+            )
+            await session.commit()
+
+    async def invalidate_user_refresh_tokens(self, user_id: str, exclude_token: str):
+        async with self.postgres_session() as session:
+            await session.execute(
+                delete(db_models.RefreshToken).where(
+                    db_models.RefreshToken.user_id == user_id,
+                    db_models.RefreshToken.token != exclude_token,
                 )
             )
             await session.commit()

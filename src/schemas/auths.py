@@ -21,3 +21,8 @@ class AuthOutputSchema(BaseModel):
 
 class RefreshInputSchema(BaseModel):
     refresh_token: str
+
+
+class LoginInputSchema(BaseModel):
+    login: str
+    password: str
