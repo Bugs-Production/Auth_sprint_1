@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from functools import lru_cache
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -10,6 +10,8 @@ from sqlalchemy.future import select
 from db.postgres import get_postgres_session
 from models.roles import Role
 from schemas.roles import RoleCreateSchema, RoleSchema
+from services.exceptions import (ObjectAlreadyExistsException,
+                                 ObjectNotFoundError)
 
 
 class AbstractRoleService(ABC):
@@ -34,16 +36,14 @@ class AbstractRoleService(ABC):
         pass
 
 
-class RolesService(AbstractRoleService):
+class RoleService(AbstractRoleService):
     def __init__(self, postgres_session: AsyncSession):
         self.postgres_session = postgres_session
 
     async def get_role_by_id(self, role_id: str) -> Role:
         """Поиск роли по id"""
         async with self.postgres_session() as session:
-            role_uuid = UUID(role_id)
-
-            result = await session.scalars(select(Role).filter_by(id=role_uuid))
+            result = await session.scalars(select(Role).filter_by(id=role_id))
             return result.first()
 
     async def get_roles_list(self) -> Role | None:
@@ -63,20 +63,14 @@ class RolesService(AbstractRoleService):
                 await session.refresh(new_role)
                 return new_role
             except IntegrityError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Role with title {role.title} already exists",
-                )
+                raise ObjectAlreadyExistsException
 
     async def delete_role(self, role_id: str) -> None:
         """Удаление роли"""
         role = await self.get_role_by_id(role_id)
 
         if role is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Role not found.",
-            )
+            raise ObjectNotFoundError
 
         async with self.postgres_session() as session:
             await session.delete(role)
@@ -89,10 +83,7 @@ class RolesService(AbstractRoleService):
         old_role = await self.get_role_by_id(role_id)
 
         if old_role is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Role not found.",
-            )
+            raise ObjectNotFoundError
 
         if old_role.title == role.title:
             return old_role
@@ -110,5 +101,5 @@ class RolesService(AbstractRoleService):
 @lru_cache()
 def get_role_service(
     postgres_session: AsyncSession = Depends(get_postgres_session),
-) -> RolesService:
-    return RolesService(postgres_session)
+) -> RoleService:
+    return RoleService(postgres_session)
