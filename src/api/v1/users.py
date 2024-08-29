@@ -36,7 +36,6 @@ router = APIRouter()
 )
 async def get_user_info(
     user_id: UUID,
-    # auth_data: dict[str, Any] = Depends(authenticate_user),
     access_token: Annotated[str, Depends(oauth2_scheme)],
     user_service: UserService = Depends(get_user_service),
     auth_service: AuthService = Depends(get_auth_service),
