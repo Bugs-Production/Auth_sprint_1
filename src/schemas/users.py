@@ -1,11 +1,11 @@
 from datetime import date, datetime
-from uuid import UUID, uuid4
 
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, model_validator
+
+from .mixins import IdMixin
 
 
-class UserSchema(BaseModel):
-    id: UUID = Field(default_factory=uuid4, serialization_alias="uuid")
+class UserSchema(IdMixin):
     login: str
     first_name: str | None
     last_name: str | None
