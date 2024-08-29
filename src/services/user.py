@@ -19,10 +19,7 @@ class UserService:
 
     async def get_user_by_id(self, user_id: UUID) -> db_models.User:
         async with self.postgres_session() as session:
-            results = await session.scalars(
-                select(db_models.User).where(db_models.User.id == user_id)
-            )
-            user = results.first()
+            user = await session.get(db_models.User, user_id)
             if not user:
                 raise ObjectNotFoundError
 
@@ -30,10 +27,10 @@ class UserService:
 
     async def get_user_by_login(self, login: str) -> db_models.User:
         async with self.postgres_session() as session:
-            results = await session.scalars(
-                select(db_models.User).where(db_models.User.login == login)
+            results = await session.execute(
+                select(db_models.User).filter_by(login=login)
             )
-            user = results.first()
+            user = results.scalars().first()
             if not user:
                 raise ObjectNotFoundError
 
@@ -43,19 +40,15 @@ class UserService:
         self, user_id: UUID, user_data: UpdateUserSchema
     ) -> db_models.User:
         async with self.postgres_session() as session:
-            results = await session.scalars(
-                select(db_models.User).where(db_models.User.id == user_id)
-            )
-            if not results:
-                raise ObjectNotFoundError
+            user = await session.get(db_models.User, user_id)
 
-            user = results.first()
+            if not user:
+                raise ObjectNotFoundError
 
             for field in user_data.model_fields_set:
                 val = getattr(user_data, field)
                 setattr(user, field, val)
 
-            session.add(user)
             try:
                 await session.commit()
             except IntegrityError:
