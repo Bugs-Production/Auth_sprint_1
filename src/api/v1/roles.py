@@ -1,10 +1,11 @@
-from typing import Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import Page, paginate
 
-from api.auth_utils import authenticate_user, check_admin
+from api.auth_utils import check_admin, decode_token, oauth2_scheme
 from schemas.roles import RoleCreateSchema, RoleSchema
+from services.auth import AuthService, get_auth_service
 from services.exceptions import (ObjectAlreadyExistsException,
                                  ObjectNotFoundError)
 from services.role import RoleService, get_role_service
@@ -44,10 +45,23 @@ router = APIRouter()
     },
 )
 async def roles(
-    auth_data: dict[str, Any] = Depends(authenticate_user),
+    access_token: Annotated[str, Depends(oauth2_scheme)],
+    auth_service: AuthService = Depends(get_auth_service),
     role_service: RoleService = Depends(get_role_service),
 ) -> Page[RoleSchema]:
-    check_admin(auth_data)
+
+    payload = decode_token(access_token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
+        )
+
+    check_admin(payload)
+
+    if not auth_service.is_access_token_valid(access_token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
+        )
 
     roles_list = await role_service.get_roles_list()
     return paginate(roles_list)
@@ -93,10 +107,24 @@ async def roles(
 )
 async def create_roles(
     role: RoleCreateSchema,
-    auth_data: dict[str, Any] = Depends(authenticate_user),
+    access_token: Annotated[str, Depends(oauth2_scheme)],
+    auth_service: AuthService = Depends(get_auth_service),
     role_service: RoleService = Depends(get_role_service),
 ) -> RoleSchema:
-    check_admin(auth_data)
+
+    payload = decode_token(access_token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
+        )
+
+    check_admin(payload)
+
+    if not auth_service.is_access_token_valid(access_token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
+        )
+
     try:
         new_role = await role_service.create_role(role)
         return new_role
@@ -136,10 +164,24 @@ async def create_roles(
 )
 async def delete_roles(
     role_id: str,
-    auth_data: dict[str, Any] = Depends(authenticate_user),
+    access_token: Annotated[str, Depends(oauth2_scheme)],
+    auth_service: AuthService = Depends(get_auth_service),
     role_service: RoleService = Depends(get_role_service),
 ) -> dict:
-    check_admin(auth_data)
+
+    payload = decode_token(access_token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
+        )
+
+    check_admin(payload)
+
+    if not auth_service.is_access_token_valid(access_token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
+        )
+
     try:
         await role_service.delete_role(role_id)
         return {"detail": "Role deleted successfully"}
@@ -177,10 +219,24 @@ async def delete_roles(
 async def update_roles(
     role_id: str,
     role: RoleSchema,
-    auth_data: dict[str, Any] = Depends(authenticate_user),
+    access_token: Annotated[str, Depends(oauth2_scheme)],
+    auth_service: AuthService = Depends(get_auth_service),
     role_service: RoleService = Depends(get_role_service),
 ) -> RoleSchema:
-    check_admin(auth_data)
+
+    payload = decode_token(access_token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
+        )
+
+    check_admin(payload)
+
+    if not auth_service.is_access_token_valid(access_token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
+        )
+
     try:
         updated_role = await role_service.change_role(role, role_id)
         return updated_role

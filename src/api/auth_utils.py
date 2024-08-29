@@ -1,25 +1,22 @@
 from http import HTTPStatus
-from typing import Annotated, Any
+from typing import Any
 from uuid import UUID
 
 import jwt
-from fastapi import Header, HTTPException
+from fastapi import HTTPException
+from fastapi.security import OAuth2PasswordBearer
 
 from core.config import JWT_ALGORITHM, settings
 
-
-def authenticate_user(
-    authorization: Annotated[str | None, Header()] = None,
-) -> dict[str, Any]:
-    token = authorization.replace("Bearer ", "")
-    return decode_token_or_401(token)
+# Для чтения access-токенов из заголовка запроса
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="v1/auth/login")
 
 
-def decode_token_or_401(token: str) -> dict[str, Any]:
+def decode_token(token: str) -> dict[str, Any] | None:
     try:
         payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[JWT_ALGORITHM])
     except jwt.exceptions.InvalidTokenError:
-        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
+        return None
 
     return payload
 

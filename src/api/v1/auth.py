@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from api.auth_utils import decode_token_or_401
+from api.auth_utils import decode_token
 from schemas.auths import (AuthOutputSchema, LoginInputSchema,
                            RefreshInputSchema)
 from schemas.users import CreateUserSchema
@@ -72,12 +72,19 @@ async def refresh(
     auth_service: AuthService = Depends(get_auth_service),
     user_service: UserService = Depends(get_user_service),
 ) -> AuthOutputSchema:
-    token_data = decode_token_or_401(request_data.refresh_token)
+
+    refresh_token_data = decode_token(request_data.refresh_token)
+    if not refresh_token_data:
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
 
     if not await auth_service.is_refresh_token_valid(request_data.refresh_token):
         raise HTTPException(status_code=HTTPStatus.FORBIDDEN)
 
-    user_id = token_data["user_id"]
+    access_token_data = decode_token(request_data.access_token)
+    if access_token_data:
+        await auth_service.invalidate_access_token(request_data.access_token)
+
+    user_id = refresh_token_data["user_id"]
 
     user_roles = [x.title for x in await user_service.get_user_roles(user_id)]
     refresh_token, access_token = await auth_service.update_refresh_token(
@@ -150,9 +157,15 @@ async def logout(
     request_data: RefreshInputSchema,
     auth_service: AuthService = Depends(get_auth_service),
 ):
-    decode_token_or_401(request_data.refresh_token)
+    refresh_token_data = decode_token(request_data.refresh_token)
+    if not refresh_token_data:
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
 
     await auth_service.invalidate_refresh_token(request_data.refresh_token)
+
+    if decode_token(request_data.access_token):
+        await auth_service.invalidate_access_token(request_data.access_token)
+
     return {"detail": "logout success"}
 
 
@@ -168,13 +181,15 @@ async def logout(
         },
     },
 )
-async def logout(
+async def logout_all(
     request_data: RefreshInputSchema,
     auth_service: AuthService = Depends(get_auth_service),
 ):
-    token_data = decode_token_or_401(request_data.refresh_token)
+    refresh_token_data = decode_token(request_data.refresh_token)
+    if not refresh_token_data:
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
 
     await auth_service.invalidate_user_refresh_tokens(
-        token_data["user_id"], request_data.refresh_token
+        refresh_token_data["user_id"], request_data.refresh_token
     )
     return {"detail": "logout from all other devices success"}

@@ -3,17 +3,20 @@ from functools import lru_cache
 
 import jwt
 from fastapi import Depends
+from redis import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import delete, exists, select
 
 import models as db_models
 from core.config import JWT_ALGORITHM, settings
 from db.postgres import get_postgres_session
+from db.redis import RedisCache, get_redis
 
 
 class AuthService:
-    def __init__(self, postgres_session: AsyncSession):
+    def __init__(self, postgres_session: AsyncSession, redis: Redis):
         self.postgres_session = postgres_session
+        self.redis = RedisCache(redis)
 
     @staticmethod
     async def generate_access_token(user_id: str, user_roles: list[str]) -> str:
@@ -99,9 +102,19 @@ class AuthService:
             )
             await session.commit()
 
+    async def invalidate_access_token(self, token: str) -> None:
+        await self.redis.put_to_cache(
+            key=token, value=True, ttl=settings.access_token_exp_hours * 3600
+        )
+
+    async def is_access_token_valid(self, token: str) -> bool:
+        invalid_token = await self.redis.get_from_cache(key=token)
+        return False if invalid_token else True
+
 
 @lru_cache()
 def get_auth_service(
     postgres_session: AsyncSession = Depends(get_postgres_session),
+    redis: Redis = Depends(get_redis),
 ) -> AuthService:
-    return AuthService(postgres_session)
+    return AuthService(postgres_session, redis)
