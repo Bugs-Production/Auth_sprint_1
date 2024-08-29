@@ -22,3 +22,7 @@ makemigrations:
 .PHONY: migrate
 migrate:
 	docker exec users_fastapi alembic upgrade head
+
+.PHONY: tests
+tests:
+	docker exec users_fastapi pytest -s
