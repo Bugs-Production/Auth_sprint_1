@@ -31,3 +31,9 @@ def check_allow_affect_user(auth_data: dict[str, Any], user_id: UUID):
     """
     if "admin" not in auth_data["roles"] and str(user_id) != auth_data["user_id"]:
         raise HTTPException(status_code=HTTPStatus.FORBIDDEN)
+
+
+def check_admin(auth_data: dict[str, Any]):
+    """Проверяет что только админ может получить доступ к endpoints"""
+    if "admin" not in auth_data["roles"]:
+        raise HTTPException(status_code=HTTPStatus.FORBIDDEN)

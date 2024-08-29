@@ -8,7 +8,7 @@ start:
 
 .PHONY: stop
 stop:
-	docker-compose down -v
+	docker-compose down
 
 .PHONY: format
 format:

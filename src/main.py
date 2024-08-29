@@ -7,7 +7,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 
-from api.v1 import auth, users
+from api.v1 import auth, roles, users
 from core.config import settings
 from db import postgres, redis
 
@@ -34,5 +34,6 @@ app = FastAPI(
 )
 add_pagination(app)
 
+app.include_router(roles.router, prefix="/api/v1/roles", tags=["roles"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
