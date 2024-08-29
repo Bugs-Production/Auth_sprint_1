@@ -16,12 +16,24 @@ router = APIRouter()
 @router.post(
     "/signup",
     response_model=AuthOutputSchema,
+    summary="Регистрация пользователя",
+    response_description="Пара токенов: access, refresh",
+    responses={
+        HTTPStatus.CONFLICT: {
+            "description": "Пользователь с такими параметрами уже существует",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "user with this parameters already exists"}
+                }
+            },
+        },
+    },
 )
 async def signup(
     user_data: CreateUserSchema,
     auth_service: AuthService = Depends(get_auth_service),
     user_service: UserService = Depends(get_user_service),
-):
+) -> AuthOutputSchema:
     try:
         user = await user_service.create_user(user_data)
     except ConflictError:
@@ -42,12 +54,24 @@ async def signup(
 @router.post(
     "/refresh",
     response_model=AuthOutputSchema,
+    summary="Обновление access token",
+    response_description="Пара токенов: access, refresh",
+    responses={
+        HTTPStatus.UNAUTHORIZED: {
+            "description": "Ошибка валидации токена",
+            "content": {"application/json": {"example": {"detail": "invalid token"}}},
+        },
+        HTTPStatus.FORBIDDEN: {
+            "description": "Доступ запрещен",
+            "content": {"application/json": {"example": {"detail": "Forbidden"}}},
+        },
+    },
 )
 async def refresh(
     request_data: RefreshInputSchema,
     auth_service: AuthService = Depends(get_auth_service),
     user_service: UserService = Depends(get_user_service),
-):
+) -> AuthOutputSchema:
     token_data = decode_token_or_401(request_data.refresh_token)
 
     if not await auth_service.is_refresh_token_valid(request_data.refresh_token):
@@ -68,12 +92,30 @@ async def refresh(
 @router.post(
     "/login",
     response_model=AuthOutputSchema,
+    summary="Вход пользователя в аккаунт",
+    response_description="Пара токенов: access, refresh",
+    responses={
+        HTTPStatus.NOT_FOUND: {
+            "description": "Пользователь не найден",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "user with this parameters already exists"}
+                }
+            },
+        },
+        HTTPStatus.BAD_REQUEST: {
+            "description": "Ошибка валидации пароля",
+            "content": {
+                "application/json": {"example": {"detail": "invalid password"}}
+            },
+        },
+    },
 )
 async def login(
     login_data: LoginInputSchema,
     auth_service: AuthService = Depends(get_auth_service),
     user_service: UserService = Depends(get_user_service),
-):
+) -> AuthOutputSchema:
     try:
         user = await user_service.get_user_by_login(login_data.login)
     except ObjectNotFoundError:
@@ -92,16 +134,40 @@ async def login(
     return AuthOutputSchema(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.post("/logout", status_code=200)
+@router.post(
+    "/logout",
+    status_code=200,
+    summary="Выход пользователя из аккаунта",
+    response_description="",
+    responses={
+        HTTPStatus.UNAUTHORIZED: {
+            "description": "Ошибка валидации токена",
+            "content": {"application/json": {"example": {"detail": "invalid token"}}},
+        },
+    },
+)
 async def logout(
     request_data: RefreshInputSchema,
     auth_service: AuthService = Depends(get_auth_service),
 ):
+    decode_token_or_401(request_data.refresh_token)
+
     await auth_service.invalidate_refresh_token(request_data.refresh_token)
     return {"detail": "logout success"}
 
 
-@router.post("/logout/all", status_code=200)
+@router.post(
+    "/logout/all",
+    status_code=200,
+    summary="Выход пользователя из остальных аккаунтов",
+    response_description="",
+    responses={
+        HTTPStatus.UNAUTHORIZED: {
+            "description": "Ошибка валидации токена",
+            "content": {"application/json": {"example": {"detail": "invalid token"}}},
+        },
+    },
+)
 async def logout(
     request_data: RefreshInputSchema,
     auth_service: AuthService = Depends(get_auth_service),
