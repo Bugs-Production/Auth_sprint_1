@@ -1,11 +1,11 @@
 from datetime import date, datetime
-from uuid import UUID, uuid4
 
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, model_validator
+
+from .mixins import IdMixin
 
 
-class UserSchema(BaseModel):
-    id: UUID = Field(default_factory=uuid4, serialization_alias="uuid")
+class UserSchema(IdMixin):
     login: str
     first_name: str | None
     last_name: str | None
@@ -34,3 +34,16 @@ class UpdateUserSchema(BaseModel):
 class UserLoginHistorySchema(BaseModel):
     event_date: datetime
     success: bool
+
+
+class CreateUserSchema(BaseModel):
+    login: str
+    password: str
+    first_name: str | None = None
+    last_name: str | None = None
+
+    @model_validator(mode="after")
+    def check_at_least_one_field_exists(self):
+        if not self.model_fields_set:
+            raise ValueError("At least one field required")
+        return self
