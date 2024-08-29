@@ -133,6 +133,8 @@ async def login(
 
     user_id = str(user.id)
 
+    await user_service.save_login_history(user_id)
+
     user_roles = [x.title for x in await user_service.get_user_roles(user_id)]
 
     access_token = await auth_service.generate_access_token(user_id, user_roles)
