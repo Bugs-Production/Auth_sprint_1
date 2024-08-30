@@ -1,22 +1,24 @@
 from http import HTTPStatus
-from typing import Annotated, Any
+from typing import Annotated, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi_pagination import Page, paginate
+from fastapi_pagination import Page, Params, paginate
 
-from api.auth_utils import check_admin, decode_token, oauth2_scheme
+from api.auth_utils import (check_admin, check_allow_affect_user, decode_token,
+                            oauth2_scheme)
 from schemas.roles import RoleSchema, RoleUpdateSchema
 from services.admin import AdminService, get_admin_service
 from services.auth import AuthService, get_auth_service
-from services.exceptions import ConflictError, ObjectNotFoundError
+from services.exceptions import (ConflictError, ObjectNotFoundError,
+                                 UserNotFoundError)
 
 router = APIRouter()
 
 
 @router.get(
     "/{user_id}/roles",
-    response_model=Page[RoleSchema],
+    response_model=Union[Page[RoleSchema], list],
     summary="Информация по ролям пользователя",
     response_description="Информация по ролям пользователя",
     responses={
@@ -39,21 +41,25 @@ async def get_user_roles(
     access_token: Annotated[str, Depends(oauth2_scheme)],
     auth_service: AuthService = Depends(get_auth_service),
     admin_service: AdminService = Depends(get_admin_service),
-):
+    params: Params = Depends(),
+) -> Union[Page[RoleSchema], list]:
     payload = decode_token(access_token)
     if not payload:
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
 
-    check_admin(payload)
+    check_allow_affect_user(payload, user_id)
 
     if not auth_service.is_access_token_valid(access_token):
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
+
     try:
         roles = await admin_service.get_user_roles(user_id)
-        return paginate(roles)
+        return paginate(roles, params)
     except ObjectNotFoundError:
+        return []
+    except UserNotFoundError:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail="objects not found"
+            status_code=HTTPStatus.NOT_FOUND, detail="user does not exist"
         )
 
 
@@ -83,10 +89,11 @@ async def add_user_role(
     access_token: Annotated[str, Depends(oauth2_scheme)],
     auth_service: AuthService = Depends(get_auth_service),
     admin_service: AdminService = Depends(get_admin_service),
-):
+) -> RoleSchema:
     payload = decode_token(access_token)
     if not payload:
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
+
     check_admin(payload)
 
     if not auth_service.is_access_token_valid(access_token):
@@ -97,7 +104,11 @@ async def add_user_role(
         role = await admin_service.add_user_role(user_id, role_id)
         return role
     except ObjectNotFoundError:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="object not found")
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="role not found")
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail="user does not exist"
+        )
     except ConflictError:
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT, detail="user already has this role"
@@ -130,10 +141,11 @@ async def remove_user_role(
     access_token: Annotated[str, Depends(oauth2_scheme)],
     auth_service: AuthService = Depends(get_auth_service),
     admin_service: AdminService = Depends(get_admin_service),
-):
+) -> RoleUpdateSchema:
     payload = decode_token(access_token)
     if not payload:
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
+
     check_admin(payload)
 
     if not auth_service.is_access_token_valid(access_token):
@@ -144,4 +156,8 @@ async def remove_user_role(
         role = await admin_service.remove_user_role(user_id, role_id)
         return role
     except ObjectNotFoundError:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="object not found")
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="role not found")
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail="user does not exist"
+        )

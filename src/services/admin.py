@@ -10,7 +10,8 @@ from sqlalchemy.orm import selectinload
 from db.postgres import get_postgres_session
 from models.roles import Role
 from models.user import User
-from services.exceptions import ConflictError, ObjectNotFoundError
+from services.exceptions import (ConflictError, ObjectNotFoundError,
+                                 UserNotFoundError)
 
 
 class AdminService:
@@ -19,6 +20,11 @@ class AdminService:
 
     async def get_user_roles(self, user_id: UUID):
         async with self.postgres_session() as session:
+            user_scalars = await session.scalars(select(User).where(User.id == user_id))
+            user = user_scalars.first()
+            if not user:
+                raise UserNotFoundError
+
             role_scalars = await session.scalars(
                 select(Role).join(User.roles).where(User.id == user_id)
             )
@@ -38,6 +44,9 @@ class AdminService:
                 select(User).options(selectinload(User.roles)).where(User.id == user_id)
             )
             user = user_scalars.first()
+            if not user:
+                raise UserNotFoundError
+
             user.roles.append(role)
             session.add(user)
             try:
@@ -52,6 +61,8 @@ class AdminService:
                 select(User).options(selectinload(User.roles)).where(User.id == user_id)
             )
             user = user_scalars.first()
+            if not user:
+                raise UserNotFoundError
 
             role_scalars = await session.scalars(select(Role).where(Role.id == role_id))
             role = role_scalars.first()
