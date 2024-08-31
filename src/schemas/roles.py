@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field
 from uuid import UUID, uuid4
+
+from pydantic import BaseModel, Field
+
 from schemas.mixins import IdMixin
 
 
