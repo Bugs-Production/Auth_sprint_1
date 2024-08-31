@@ -8,3 +8,7 @@ class ConflictError(Exception):
 
 class ObjectAlreadyExistsException(Exception):
     pass
+
+
+class UserNotFoundError(Exception):
+    pass
