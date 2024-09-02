@@ -1,7 +1,19 @@
+import os
+from functools import lru_cache
+from pathlib import Path
+
+from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+ENV_PRODUCTION = "prod"
+ENV_LOCAL = "local"
+ENV_TEST = "test"
+
+
 JWT_ALGORITHM = "HS256"
+
+load_dotenv()
 
 
 class Settings(BaseSettings):
@@ -29,4 +41,16 @@ class Settings(BaseSettings):
     refresh_token_exp_days: int = Field(10, alias="REFRESH_TOKEN_EXP_DAYS")
 
 
-settings = Settings()
+@lru_cache
+def get_settings() -> Settings:
+    environment = os.getenv("ENVIRONMENT", ENV_PRODUCTION)
+    root_dir = Path(__file__).parent.parent.parent
+    env_file_name = f".env.{environment}"
+    if not root_dir.joinpath(env_file_name).exists():
+        env_file_name = f".env.{environment}.example"
+
+    env_file_path = root_dir.joinpath(env_file_name)
+    return Settings(_env_file=env_file_path, _env_file_encoding="utf-8")
+
+
+settings = get_settings()
