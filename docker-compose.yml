@@ -7,6 +7,8 @@ services:
       - .env.prod
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
 
   fastapi:
     container_name: users_fastapi
@@ -21,7 +23,7 @@ services:
     volumes:
       - ./src:/src
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
 
   redis:
     image: redis:latest
