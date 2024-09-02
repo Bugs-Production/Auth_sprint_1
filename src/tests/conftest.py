@@ -1,77 +1,83 @@
 import asyncio
+import uuid
+from collections.abc import AsyncGenerator
 
-import asyncpg
+import pytest
 import pytest_asyncio
-from alembic import command
-from alembic.config import Config
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
+from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
                                     create_async_engine)
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 from core.config import settings
+from db.postgres import Base
 from main import app
+from models.roles import Role
+from models.user import User
 
-TestBase = declarative_base()
-TEST_DATABASE_URL = settings.test_postgres_url
-MAIN_DATABASE_URL = settings.postgres_url
+TEST_DATABASE_URL = settings.postgres_url
 
-
-async def create_database():
-    # Создание подключения к основной базе данных
-    conn = await asyncpg.connect(
-        user=settings.postgres_user,
-        password=settings.postgres_password,
-        database=settings.postgres_db,
-        host=settings.postgres_host,
-        port=settings.postgres_port,
-    )
-    try:
-        # Попытка создания базы данных, если она не существует
-        await conn.execute(
-            """
-            CREATE DATABASE test_users_database
-        """
-        )
-    except asyncpg.DuplicateDatabaseError:
-        # База данных уже существует, ничего не делаем
-        pass
-    finally:
-        await conn.close()
+# Service and model fixtures
 
 
 @pytest_asyncio.fixture(scope="session")
-async def setup_test_db():
-    # создание бд
-    await create_database()
-
-    engine = create_async_engine(TEST_DATABASE_URL, echo=True)
-    async_session = async_sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False
-    )
-
-    # Асинхронное применение миграций
-    alembic_cfg = Config("alembic.ini")
-    alembic_cfg.set_main_option("sqlalchemy.url", TEST_DATABASE_URL)
-    await asyncio.to_thread(command.upgrade, alembic_cfg, "head")
-
-    yield async_session
-
-    # Очистка базы данных после завершения тестов
-    async with engine.begin() as conn:
-        await conn.run_sync(TestBase.metadata.drop_all)
-
-    await engine.dispose()
-
-
-@pytest_asyncio.fixture(scope="function")
-async def db_session(setup_test_db):
-    async_session = setup_test_db
-    async with async_session() as session:
-        yield session
+def event_loop():
+    loop = asyncio.get_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest_asyncio.fixture(scope="session")
 def client():
     with TestClient(app) as client:
         yield client
+
+
+@pytest.fixture(scope="session")
+def test_engine() -> AsyncEngine:
+    engine = create_async_engine(
+        TEST_DATABASE_URL, echo=settings.sql_echo, poolclass=NullPool
+    )
+    yield engine
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_session(test_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
+    async_session = sessionmaker(
+        test_engine, class_=AsyncSession, expire_on_commit=False
+    )
+    async with test_engine.connect() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+        await conn.commit()
+
+        async with async_session() as session:
+            yield session
+
+        await conn.run_sync(Base.metadata.drop_all)
+
+
+# Tests data
+
+
+# Example
+@pytest_asyncio.fixture(scope="function")
+async def create_admin(test_session):
+    # Создание роли админа
+    admin_role = Role(id=uuid.uuid4(), title="admin")
+    test_session.add(admin_role)
+    await test_session.commit()
+
+    # Создание пользователя-админа
+    admin_user = User(
+        login="admin_user",
+        password="admin_password",
+        first_name="Admin",
+        last_name="User",
+    )
+    admin_user.roles.append(admin_role)
+    test_session.add(admin_user)
+    await test_session.commit()
+
+    return admin_user
