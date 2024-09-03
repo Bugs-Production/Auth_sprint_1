@@ -8,11 +8,6 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from core.config import settings
 from db.postgres import Base
-from models.associations import user_role
-from models.login_history import LoginHistory
-from models.refresh_token import RefreshToken
-from models.roles import Role
-from models.user import User
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

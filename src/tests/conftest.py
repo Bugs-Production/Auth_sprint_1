@@ -1,35 +1,76 @@
+import asyncio
 import uuid
+from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta
 
 import jwt
 import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
+                                    create_async_engine)
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
-from core import config
 from core.config import settings
 from db.postgres import Base
 from main import app
 from models.roles import Role
 from models.user import User
 
+TEST_DATABASE_URL = settings.postgres_url
+JWT_ALGORITHM = "HS256"
 
-@pytest.fixture(scope="function")
-def sqlalchemy_declarative_base():
-    return Base
+# Service and model fixtures
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
+def event_loop():
+    loop = asyncio.get_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest_asyncio.fixture(scope="session")
 def client():
     with TestClient(app) as client:
         yield client
 
 
-@pytest.fixture(scope="function")
-def create_admin(mocked_session):
+@pytest.fixture(scope="session")
+def test_engine() -> AsyncEngine:
+    engine = create_async_engine(
+        TEST_DATABASE_URL, echo=settings.sql_echo, poolclass=NullPool
+    )
+    yield engine
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_session(test_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
+    async_session = sessionmaker(
+        test_engine, class_=AsyncSession, expire_on_commit=False
+    )
+    async with test_engine.connect() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+        await conn.commit()
+
+        async with async_session() as session:
+            yield session
+
+        await conn.run_sync(Base.metadata.drop_all)
+
+
+# Tests data
+
+
+# Example
+@pytest_asyncio.fixture(scope="function")
+async def create_admin(test_session):
     # Создание роли админа
     admin_role = Role(id=uuid.uuid4(), title="admin")
-    mocked_session.add(admin_role)
-    mocked_session.commit()
+    test_session.add(admin_role)
+    await test_session.commit()
 
     # Создание пользователя-админа
     admin_user = User(
@@ -39,33 +80,32 @@ def create_admin(mocked_session):
         last_name="User",
     )
     admin_user.roles.append(admin_role)
-    mocked_session.add(admin_user)
-    mocked_session.commit()
+    test_session.add(admin_user)
+    await test_session.commit()
 
     return admin_user
 
 
 @pytest.fixture(scope="function")
 def access_token_admin(create_admin):
-    valid_till = datetime.now() + timedelta(hours=1)
+    valid_till = datetime.now() + timedelta(hours=settings.access_token_exp_hours)
     payload = {
         "user_id": str(create_admin.id),
         "exp": int(valid_till.timestamp()),
         "roles": [create_admin.roles[0].title],
     }
 
-    token = jwt.encode(payload, settings.jwt_secret_key, algorithm=config.JWT_ALGORITHM)
+    token = jwt.encode(payload, settings.jwt_secret_key, algorithm=JWT_ALGORITHM)
     return token
-
 
 @pytest.fixture(scope="function")
 def access_token_moderator(create_admin):
-    valid_till = datetime.now() + timedelta(hours=1)
+    valid_till = datetime.now() + timedelta(hours=settings.access_token_exp_hours)
     payload = {
         "user_id": str(create_admin.id),
         "exp": int(valid_till.timestamp()),
         "roles": ["moderator"],
     }
 
-    token = jwt.encode(payload, settings.jwt_secret_key, algorithm=config.JWT_ALGORITHM)
+    token = jwt.encode(payload, settings.jwt_secret_key, algorithm=JWT_ALGORITHM)
     return token
