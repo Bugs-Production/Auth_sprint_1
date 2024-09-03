@@ -7,7 +7,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 
-from api.v1 import auth, roles, users
+from api.v1 import admins, auth, roles, users
 from core.config import settings
 from db import postgres, redis
 
@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
         )
         yield
     finally:
-        await redis.redis.close()
+        await redis.redis.aclose()
 
 
 app = FastAPI(
@@ -35,5 +35,6 @@ app = FastAPI(
 
 app.include_router(roles.router, prefix="/api/v1/roles", tags=["roles"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
+app.include_router(admins.router, prefix="/api/v1/users", tags=["admins"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 add_pagination(app)

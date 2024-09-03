@@ -52,5 +52,10 @@ make migrate
 make format
 ```
 
+Запуск тестов 
+```
+make tests
+```
+
 ## Документация
 Swagger документация находится по ручке `/api/openapi`

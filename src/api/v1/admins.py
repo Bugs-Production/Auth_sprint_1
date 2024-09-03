@@ -1,24 +1,26 @@
 from http import HTTPStatus
-from typing import Annotated
+from typing import Annotated, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi_pagination import Page, paginate
+from fastapi_pagination import Page, Params, paginate
 
-from api.auth_utils import check_allow_affect_user, decode_token, oauth2_scheme
-from schemas.users import UpdateUserSchema, UserLoginHistorySchema, UserSchema
+from api.auth_utils import (check_admin, check_allow_affect_user, decode_token,
+                            oauth2_scheme)
+from schemas.roles import RoleSchema, RoleUpdateSchema
+from services.admin import AdminService, get_admin_service
 from services.auth import AuthService, get_auth_service
-from services.exceptions import ConflictError, ObjectNotFoundError
-from services.user import UserService, get_user_service
+from services.exceptions import (ConflictError, ObjectNotFoundError,
+                                 UserNotFoundError)
 
 router = APIRouter()
 
 
 @router.get(
-    "/{user_id}",
-    response_model=UserSchema,
-    summary="Информация о пользователе",
-    response_description="Полная информация о пользователе",
+    "/{user_id}/roles",
+    response_model=Union[Page[RoleSchema], list],
+    summary="Информация по ролям пользователя",
+    response_description="Информация по ролям пользователя",
     responses={
         HTTPStatus.NOT_FOUND: {
             "description": "Пользователь не найден",
@@ -34,13 +36,13 @@ router = APIRouter()
         },
     },
 )
-async def get_user_info(
+async def get_user_roles(
     user_id: UUID,
     access_token: Annotated[str, Depends(oauth2_scheme)],
-    user_service: UserService = Depends(get_user_service),
     auth_service: AuthService = Depends(get_auth_service),
-):
-
+    admin_service: AdminService = Depends(get_admin_service),
+    params: Params = Depends(),
+) -> Union[Page[RoleSchema], list]:
     payload = decode_token(access_token)
     if not payload:
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
@@ -51,108 +53,111 @@ async def get_user_info(
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
 
     try:
-        user = await user_service.get_user_by_id(user_id)
+        roles = await admin_service.get_user_roles(user_id)
+        return paginate(roles, params)
     except ObjectNotFoundError:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="user not found")
-
-    return user
-
-
-@router.get(
-    "/{user_id}/login_history",
-    response_model=Page[UserLoginHistorySchema],
-    summary="Информация об истории логинов пользователя",
-    response_description="Список всех логинов пользователя с пагинацией",
-    responses={
-        HTTPStatus.NOT_FOUND: {
-            "description": "Пользователь не найден",
-            "content": {"application/json": {"example": {"detail": "user not found"}}},
-        },
-        HTTPStatus.UNAUTHORIZED: {
-            "description": "Ошибка валидации токена",
-            "content": {"application/json": {"example": {"detail": "invalid token"}}},
-        },
-        HTTPStatus.FORBIDDEN: {
-            "description": "Доступ запрещен",
-            "content": {"application/json": {"example": {"detail": "Forbidden"}}},
-        },
-    },
-)
-async def get_user_history(
-    user_id: UUID,
-    access_token: Annotated[str, Depends(oauth2_scheme)],
-    user_service: UserService = Depends(get_user_service),
-    auth_service: AuthService = Depends(get_auth_service),
-):
-    payload = decode_token(access_token)
-    if not payload:
-        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
-
-    check_allow_affect_user(payload, user_id)
-
-    if not auth_service.is_access_token_valid(access_token):
-        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
-
-    try:
-        user_history = await user_service.get_user_history(user_id)
-    except ObjectNotFoundError:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="user not found")
-
-    return paginate(user_history)
-
-
-@router.put(
-    "/{user_id}",
-    response_model=UpdateUserSchema,
-    summary="Изменения данных пользователя",
-    response_description="Актуальная информация о пользователе",
-    responses={
-        HTTPStatus.NOT_FOUND: {
-            "description": "Пользователь не найден",
-            "content": {"application/json": {"example": {"detail": "user not found"}}},
-        },
-        HTTPStatus.CONFLICT: {
-            "description": "Ошибка при обновлении данных",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "user with this parameters already exists"}
-                }
-            },
-        },
-        HTTPStatus.UNAUTHORIZED: {
-            "description": "Ошибка валидации токена",
-            "content": {"application/json": {"example": {"detail": "invalid token"}}},
-        },
-        HTTPStatus.FORBIDDEN: {
-            "description": "Доступ запрещен",
-            "content": {"application/json": {"example": {"detail": "Forbidden"}}},
-        },
-    },
-)
-async def put_user_info(
-    user_id: UUID,
-    request_data: UpdateUserSchema,
-    access_token: Annotated[str, Depends(oauth2_scheme)],
-    user_service: UserService = Depends(get_user_service),
-    auth_service: AuthService = Depends(get_auth_service),
-):
-    payload = decode_token(access_token)
-    if not payload:
-        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
-
-    check_allow_affect_user(payload, user_id)
-
-    if not auth_service.is_access_token_valid(access_token):
-        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
-
-    try:
-        user = await user_service.update_user(user_id, request_data)
-    except ObjectNotFoundError:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="user not found")
-    except ConflictError:
+        return []
+    except UserNotFoundError:
         raise HTTPException(
-            status_code=HTTPStatus.CONFLICT,
-            detail="user with this parameters already exists",
+            status_code=HTTPStatus.NOT_FOUND, detail="user does not exist"
         )
 
-    return user
+
+@router.post(
+    "/{user_id}/roles",
+    response_model=RoleSchema,
+    summary="Добавление новой роли пользователю",
+    response_description="Информация по добавленной роли пользователю",
+    responses={
+        HTTPStatus.NOT_FOUND: {
+            "description": "Пользователь не найден",
+            "content": {"application/json": {"example": {"detail": "user not found"}}},
+        },
+        HTTPStatus.UNAUTHORIZED: {
+            "description": "Ошибка валидации токена",
+            "content": {"application/json": {"example": {"detail": "invalid token"}}},
+        },
+        HTTPStatus.FORBIDDEN: {
+            "description": "Доступ запрещен",
+            "content": {"application/json": {"example": {"detail": "Forbidden"}}},
+        },
+    },
+)
+async def add_user_role(
+    user_id: UUID,
+    request_data: RoleUpdateSchema,
+    access_token: Annotated[str, Depends(oauth2_scheme)],
+    auth_service: AuthService = Depends(get_auth_service),
+    admin_service: AdminService = Depends(get_admin_service),
+) -> RoleSchema:
+    payload = decode_token(access_token)
+    if not payload:
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
+
+    check_admin(payload)
+
+    if not auth_service.is_access_token_valid(access_token):
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
+
+    try:
+        role_id = request_data.role_id
+        role = await admin_service.add_user_role(user_id, role_id)
+        return role
+    except ObjectNotFoundError:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="role not found")
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail="user does not exist"
+        )
+    except ConflictError:
+        raise HTTPException(
+            status_code=HTTPStatus.CONFLICT, detail="user already has this role"
+        )
+
+
+@router.delete(
+    "/{user_id}/roles",
+    response_model=RoleSchema,
+    summary="Удаление роли у пользователя",
+    response_description="Информация по удалённой роли пользователю",
+    responses={
+        HTTPStatus.NOT_FOUND: {
+            "description": "Пользователь не найден",
+            "content": {"application/json": {"example": {"detail": "user not found"}}},
+        },
+        HTTPStatus.UNAUTHORIZED: {
+            "description": "Ошибка валидации токена",
+            "content": {"application/json": {"example": {"detail": "invalid token"}}},
+        },
+        HTTPStatus.FORBIDDEN: {
+            "description": "Доступ запрещен",
+            "content": {"application/json": {"example": {"detail": "Forbidden"}}},
+        },
+    },
+)
+async def remove_user_role(
+    user_id: UUID,
+    request_data: RoleUpdateSchema,
+    access_token: Annotated[str, Depends(oauth2_scheme)],
+    auth_service: AuthService = Depends(get_auth_service),
+    admin_service: AdminService = Depends(get_admin_service),
+) -> RoleUpdateSchema:
+    payload = decode_token(access_token)
+    if not payload:
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
+
+    check_admin(payload)
+
+    if not auth_service.is_access_token_valid(access_token):
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
+
+    try:
+        role_id = request_data.role_id
+        role = await admin_service.remove_user_role(user_id, role_id)
+        return role
+    except ObjectNotFoundError:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="role not found")
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail="user does not exist"
+        )
