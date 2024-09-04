@@ -32,9 +32,10 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
     default_response_class=ORJSONResponse,
 )
-add_pagination(app)
 
 app.include_router(roles.router, prefix="/api/v1/roles", tags=["roles"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 app.include_router(admins.router, prefix="/api/v1/users", tags=["admins"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+
+add_pagination(app)

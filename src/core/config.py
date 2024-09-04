@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -19,10 +21,6 @@ class Settings(BaseSettings):
     postgres_url: str = Field(
         "postgresql+asyncpg://postgres:postgres@db:5432/foo", alias="POSTGRES_URL"
     )
-    test_postgres_url: str = Field(
-        "postgresql+asyncpg://postgres:postgres@db:5432/test_foo",
-        alias="TEST_POSTGRES_URL",
-    )
     redis_host: str = Field("127.0.0.1", alias="REDIS_HOST")
     redis_port: int = Field(6379, alias="REDIS_PORT")
 
@@ -32,3 +30,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+pprint(settings.model_dump())
