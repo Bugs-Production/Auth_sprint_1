@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AuthOutputSchema(BaseModel):
@@ -12,5 +12,5 @@ class RefreshInputSchema(BaseModel):
 
 
 class LoginInputSchema(BaseModel):
-    login: str
-    password: str
+    login: str = Field(min_length=1)
+    password: str = Field(min_length=1)
