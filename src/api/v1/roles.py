@@ -58,7 +58,7 @@ async def roles(
 
     check_admin(payload)
 
-    if not auth_service.is_access_token_valid(access_token):
+    if not await auth_service.is_access_token_valid(access_token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
         )
@@ -120,7 +120,7 @@ async def create_roles(
 
     check_admin(payload)
 
-    if not auth_service.is_access_token_valid(access_token):
+    if not await auth_service.is_access_token_valid(access_token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
         )
@@ -177,7 +177,7 @@ async def delete_roles(
 
     check_admin(payload)
 
-    if not auth_service.is_access_token_valid(access_token):
+    if not await auth_service.is_access_token_valid(access_token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
         )
@@ -232,7 +232,7 @@ async def update_roles(
 
     check_admin(payload)
 
-    if not auth_service.is_access_token_valid(access_token):
+    if not await auth_service.is_access_token_valid(access_token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
         )
