@@ -136,3 +136,25 @@ async def access_token_moderator(create_moderator):
 
     token = jwt.encode(payload, settings.jwt_secret_key, algorithm=JWT_ALGORITHM)
     return token
+
+
+@pytest.fixture(scope="function")
+async def refresh_token_moderator(create_moderator):
+    valid_till = datetime.now() + timedelta(hours=1)
+    payload = {
+        "user_id": str(create_moderator.id),
+        "exp": int(valid_till.timestamp()),
+    }
+
+    token = jwt.encode(payload, settings.jwt_secret_key, algorithm=JWT_ALGORITHM)
+
+    async with async_session_maker() as session:
+        refresh = RefreshToken(
+            user_id=create_moderator.id,
+            expires_at=valid_till,
+            token=token,
+        )
+        session.add(refresh)
+        await session.commit()
+
+    return token
