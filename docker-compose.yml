@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   postgres:
     image: postgres:16
@@ -9,6 +7,19 @@ services:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  postgres_test:
+    image: postgres:16
+    container_name: users_postgres_test
+    restart: always
+    env_file:
+      - .env.test
+    volumes:
+      - postgres_data_test:/var/lib/postgresql/data
+    ports:
+      - "5454:5432"
 
   fastapi:
     container_name: users_fastapi
@@ -35,6 +46,26 @@ services:
     env_file:
       - .env
 
+  pgadmin:
+    container_name: pgadmin_auth
+    image: dpage/pgadmin4:8
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_DEFAULT_EMAIL}"
+      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_DEFAULT_PASSWORD}"
+      PGADMIN_CONFIG_SERVER_MODE: "${PGADMIN_CONFIG_SERVER_MODE}"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    ports:
+      - "6060:80"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+
 
 volumes:
   postgres_data:
+  postgres_data_test:
+  pgadmin-data:

@@ -1,3 +1,5 @@
+import os
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -6,7 +8,7 @@ JWT_ALGORITHM = "HS256"
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=".env.test",
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -17,7 +19,7 @@ class Settings(BaseSettings):
     postgres_host: str = Field("postgres", alias="POSTGRES_HOST")
     postgres_port: int = Field(5432, alias="POSTGRES_PORT")
     postgres_url: str = Field(
-        "postgresql+asyncpg://postgres:postgres@db:5432/foo", alias="POSTGRES_URL"
+        "postgresql+asyncpg://postgres:postgres@db:5432/foo_test", alias="POSTGRES_URL"
     )
     redis_host: str = Field("127.0.0.1", alias="REDIS_HOST")
     redis_port: int = Field(6379, alias="REDIS_PORT")

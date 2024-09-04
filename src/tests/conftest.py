@@ -12,45 +12,21 @@ from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 from sqlalchemy.pool import NullPool
 
-from core.config import JWT_ALGORITHM, settings
 from db.postgres import Base, get_postgres_session
 from main import app
 from models.roles import Role
 from models.user import User
+from tests.core.config import JWT_ALGORITHM, settings
 
 # DATABASE
-DATABASE_URL_TEST = settings.postgres_url_test
+DATABASE_URL_TEST = settings.postgres_url
 
-
-@pytest.fixture(autouse=True, scope="session")
-async def create_database():
-    # Создание подключения к основной базе данных
-    conn = await asyncpg.connect(
-        user=settings.postgres_user,
-        password=settings.postgres_password,
-        database=settings.postgres_db,
-        host=settings.postgres_host,
-        port=settings.postgres_port,
-    )
-    try:
-        # Попытка создания базы данных, если она не существует
-        await conn.execute(
-            f"""
-            CREATE DATABASE {settings.postgres_name_test}
-        """
-        )
-    except asyncpg.DuplicateDatabaseError:
-        # База данных уже существует, ничего не делаем
-        pass
-    finally:
-        await conn.close()
-
-
-engine_test = create_async_engine(DATABASE_URL_TEST, poolclass=NullPool)
+engine_test = create_async_engine(DATABASE_URL_TEST, poolclass=NullPool, echo=True)
 async_session_maker = async_sessionmaker(
     bind=engine_test, class_=AsyncSession, expire_on_commit=False
 )
-Base.metadata.bind = engine_test
+metadata = Base.metadata
+metadata.bind = engine_test
 
 
 async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
@@ -63,10 +39,10 @@ app.dependency_overrides[get_postgres_session] = override_get_async_session
 @pytest.fixture(autouse=True, scope="session")
 async def prepare_database():
     async with engine_test.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(metadata.create_all)
     yield
     async with engine_test.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(metadata.drop_all)
 
 
 # SETUP
