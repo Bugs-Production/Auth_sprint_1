@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, EmailStr, model_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 from .mixins import IdMixin
 
@@ -37,8 +37,8 @@ class UserLoginHistorySchema(BaseModel):
 
 
 class CreateUserSchema(BaseModel):
-    login: str
-    password: str
+    login: str = Field(min_length=1)
+    password: str = Field(min_length=1)
     first_name: str | None = None
     last_name: str | None = None
 

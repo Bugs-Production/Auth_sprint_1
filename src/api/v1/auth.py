@@ -78,7 +78,7 @@ async def refresh(
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
 
     if not await auth_service.is_refresh_token_valid(request_data.refresh_token):
-        raise HTTPException(status_code=HTTPStatus.FORBIDDEN)
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
 
     access_token_data = decode_token(request_data.access_token)
     if access_token_data:
