@@ -1,20 +1,21 @@
 import asyncio
 import uuid
 from datetime import datetime, timedelta
-from typing import AsyncGenerator
 
 import jwt
 import pytest
 from fastapi.testclient import TestClient
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 from sqlalchemy.pool import NullPool
 
+from core.config import JWT_ALGORITHM, settings
 from db.postgres import Base, get_postgres_session
+from db.redis import get_redis
 from main import app
 from models.roles import Role
 from models.user import User
-from core.config import settings, JWT_ALGORITHM
 
 
 # SETUP
@@ -36,15 +37,22 @@ engine_test = create_async_engine(DATABASE_URL_TEST, poolclass=NullPool, echo=Fa
 async_session_maker = async_sessionmaker(
     bind=engine_test, class_=AsyncSession, expire_on_commit=False
 )
+redis = Redis(host=settings.redis_host, port=settings.redis_port)
+
 metadata = Base.metadata
 metadata.bind = engine_test
 
 
-async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
+async def override_get_async_session():
     return async_session_maker
 
 
+async def override_get_redis():
+    return redis
+
+
 app.dependency_overrides[get_postgres_session] = override_get_async_session
+app.dependency_overrides[get_redis] = override_get_redis
 
 
 @pytest.fixture(autouse=True, scope="function")
