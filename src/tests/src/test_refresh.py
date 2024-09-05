@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import pytest
 from fastapi import status
 
@@ -35,3 +37,27 @@ class TestAuthLogout:
         response2_data = response2.json()
         assert "access_token" in response2_data
         assert "refresh_token" in response2_data
+
+    @pytest.mark.parametrize(
+        "token_data, expected_status",
+        [
+            (
+                {
+                    "refresh_token": str(uuid4()),
+                },
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+            ),
+            (
+                {
+                    "access_token": str(uuid4()),
+                },
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+            ),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_refresh_failed_by_data(
+        self, async_client, token_data, expected_status
+    ):
+        response = await async_client.post(self.endpoint, json=token_data)
+        assert response.status_code == expected_status
