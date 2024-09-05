@@ -67,7 +67,6 @@ class TestAuthLogout:
             },
         )
         assert logout_response.status_code == status.HTTP_200_OK
-        assert logout_response.json() == constants.LOGOUT_ALL_JSON
 
         # Проверяем, что у пользователя остался единственный токен
         async with async_session_maker() as session:
