@@ -4,7 +4,7 @@ import pytest
 from fastapi import status
 
 
-class TestAuthLogout:
+class TestAuthRefresh:
     def setup_method(self):
         self.endpoint = "/api/v1/auth/refresh"
 

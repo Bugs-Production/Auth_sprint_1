@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 
 
-class TestAuthLogout:
+class TestAuthSignup:
     def setup_method(self):
         self.endpoint = "/api/v1/auth/signup"
 
