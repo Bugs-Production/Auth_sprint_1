@@ -1,6 +1,8 @@
 import pytest
 from fastapi import status
 
+from tests import constants
+
 endpoint = "/api/v1/auth"
 
 
@@ -93,8 +95,8 @@ async def test_login_success(async_client, create_moderator, access_token_modera
     login_response = await async_client.post(
         url=url,
         json={
-            "login": "moderator_user",
-            "password": "moderator_password",
+            "login": constants.MODERATOR_LOGIN,
+            "password": constants.MODERATOR_PASSWORD,
         },
     )
 

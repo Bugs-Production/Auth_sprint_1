@@ -11,6 +11,7 @@ from core.config import JWT_ALGORITHM, settings
 from db.postgres import Base, get_postgres_session
 from main import app
 from models import RefreshToken, Role, User
+from tests import constants
 
 DATABASE_URL_TEST = settings.postgres_url
 
@@ -43,18 +44,21 @@ async def prepare_database():
 
 # Data for tests
 
+
 @pytest.fixture(scope="function")
 async def create_admin():
     # Создание роли админа
     async with async_session_maker() as session:
-        admin_role = Role(id="2e796639-9b3f-49c3-9c59-9c3302ae5e59", title="admin")
+        admin_role = Role(
+            id=constants.ROLE_ADMIN_UUID, title=constants.ROLE_ADMIN_TITLE
+        )
         session.add(admin_role)
         await session.commit()
 
         # Создание пользователя-админа
         admin_user = User(
-            login="admin_user",
-            password="admin_password",
+            login=constants.ADMIN_LOGIN,
+            password=constants.ADMIN_PASSWORD,
             first_name="Admin",
             last_name="User",
         )
@@ -88,8 +92,8 @@ async def create_moderator():
 
         # Создание пользователя-модератора
         moderator = User(
-            login="moderator_user",
-            password="moderator_password",
+            login=constants.MODERATOR_LOGIN,
+            password=constants.MODERATOR_PASSWORD,
             first_name="Moderator",
             last_name="Bla",
         )
