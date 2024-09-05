@@ -62,6 +62,7 @@ async def admin():
             first_name="Admin",
             last_name="User",
         )
+        admin_user.id = constants.ADMIN_UUID
         admin_user.roles.append(admin_role)
         session.add(admin_user)
         await session.commit()
@@ -97,6 +98,7 @@ async def moderator():
             first_name="Moderator",
             last_name="Bla",
         )
+        moderator.id = constants.MODERATOR_UUID
         moderator.roles.append(moderator_role)
         session.add(moderator)
         await session.commit()
@@ -143,7 +145,7 @@ async def refresh_token_moderator(moderator):
 async def role():
     # создание роли для тестов
     async with async_session_maker() as session:
-        new_role = Role(id=uuid.uuid4(), title="new role")
+        new_role = Role(id=constants.TEST_ROLE_UUID, title="new role")
         session.add(new_role)
         await session.commit()
 
@@ -157,3 +159,11 @@ async def create_multiple_roles():
         session.add_all(roles)
         await session.commit()
         return roles
+
+
+@pytest.fixture(scope="function")
+async def add_test_role_to_moderator(moderator, role):
+    async with async_session_maker() as session:
+        moderator.roles.append(role)
+        session.add(moderator)
+        await session.commit()
