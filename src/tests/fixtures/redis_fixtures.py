@@ -13,4 +13,5 @@ async def override_get_redis():
     yield redis_client
     await redis_client.aclose()
 
+
 app.dependency_overrides[get_redis] = override_get_redis
