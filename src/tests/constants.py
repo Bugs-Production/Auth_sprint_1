@@ -6,3 +6,5 @@ MODERATOR_PASSWORD = "moderator_password"
 
 ROLE_ADMIN_UUID = "2e796639-9b3f-49c3-9c59-9c3302ae5e59"
 ROLE_ADMIN_TITLE = "admin"
+
+LOGOUT_ALL_JSON = {"detail": "logout from all other devices success"}
