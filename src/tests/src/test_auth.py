@@ -1,12 +1,10 @@
-from time import sleep
-
 import jwt
 import pytest
 from fastapi import status
 
 from core.config import JWT_ALGORITHM
-from tests.conftest import (access_token_moderator, client, create_admin,
-                            create_moderator, refresh_token_moderator)
+
+from tests.fixtures.async_fixtures import client
 
 endpoint = "/api/v1/auth"
 
