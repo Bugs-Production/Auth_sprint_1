@@ -116,7 +116,7 @@ async def add_user_role(
 
 
 @router.delete(
-    "/{user_id}/roles",
+    "/{user_id}/roles/{role_id}",
     response_model=RoleSchema,
     summary="Удаление роли у пользователя",
     response_description="Информация по удалённой роли пользователю",
@@ -137,7 +137,7 @@ async def add_user_role(
 )
 async def remove_user_role(
     user_id: UUID,
-    request_data: RoleUpdateSchema,
+    role_id: UUID,
     access_token: Annotated[str, Depends(oauth2_scheme)],
     auth_service: AuthService = Depends(get_auth_service),
     admin_service: AdminService = Depends(get_admin_service),
@@ -152,7 +152,6 @@ async def remove_user_role(
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
 
     try:
-        role_id = request_data.role_id
         role = await admin_service.remove_user_role(user_id, role_id)
         return role
     except ObjectNotFoundError:
