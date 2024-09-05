@@ -1,18 +1,7 @@
-import jwt
 import pytest
 from fastapi import status
 
-from core.config import JWT_ALGORITHM
-
-from tests.fixtures.async_fixtures import client
-
 endpoint = "/api/v1/auth"
-
-
-def _signup_user(user_data):
-    url = f"{endpoint}/signup"
-    response = client.post(url=url, json=user_data).json()
-    return response["access_token"], response["refresh_token"]
 
 
 @pytest.mark.parametrize(
@@ -87,9 +76,9 @@ def _signup_user(user_data):
     ],
 )
 @pytest.mark.asyncio
-async def test_signup(user_data, expected_status, expected_fields):
+async def test_signup(async_client, user_data, expected_status, expected_fields):
     url = f"{endpoint}/signup"
-    response = client.post(url=url, json=user_data)
+    response = await async_client.post(url=url, json=user_data)
 
     assert response.status_code == expected_status
 
@@ -99,26 +88,13 @@ async def test_signup(user_data, expected_status, expected_fields):
 
 
 @pytest.mark.asyncio
-async def test_login_success():
-    # Регистрируем пользователя и пытаемся залогиниться.
-    login = "login_user1"
-    password = "login_password1"
-
-    access_token, refresh_token = _signup_user(
-        {
-            "login": login,
-            "password": password,
-            "first_name": "AAA",
-            "last_name": "AAA",
-        },
-    )
-
+async def test_login_success(async_client, create_moderator, access_token_moderator):
     url = f"{endpoint}/login"
-    login_response = client.post(
+    login_response = await async_client.post(
         url=url,
         json={
-            "login": login,
-            "password": password,
+            "login": "moderator_user",
+            "password": "moderator_password",
         },
     )
 
@@ -129,16 +105,13 @@ async def test_login_success():
         assert field in response_data
 
     # Проверяем историю логинов пользователя
-    payload = jwt.decode(
-        access_token, options={"verify_signature": False}, algorithms=[JWT_ALGORITHM]
-    )
 
-    login_history_url = f"/api/v1/users/{payload['user_id']}/login_history"
+    login_history_url = f"/api/v1/users/{create_moderator.id}/login_history"
 
-    login_history_response = client.get(
+    login_history_response = await async_client.get(
         login_history_url,
         headers={
-            "Authorization": f"Bearer {access_token}",
+            "Authorization": f"Bearer {access_token_moderator}",
         },
     )
 
@@ -203,9 +176,11 @@ async def test_login_success():
     ],
 )
 @pytest.mark.asyncio
-async def test_login_failed(create_admin, user_data, expected_status, expected_fields):
+async def test_login_failed(
+    async_client, create_admin, user_data, expected_status, expected_fields
+):
     url = f"{endpoint}/login"
-    response = client.post(url=url, json=user_data)
+    response = await async_client.post(url=url, json=user_data)
 
     assert response.status_code == expected_status
 
@@ -216,21 +191,21 @@ async def test_login_failed(create_admin, user_data, expected_status, expected_f
 
 @pytest.mark.asyncio
 async def test_logout(
-    create_moderator, access_token_moderator, refresh_token_moderator
+    async_client, create_moderator, access_token_moderator, refresh_token_moderator
 ):
     url = f"{endpoint}/logout"
 
     # Попытка разлогиниться с неправильными токенами
     wrong_access_token = access_token_moderator[::-1]
     wrong_refresh_token = refresh_token_moderator[::-1]
-    response1 = client.post(
+    response1 = await async_client.post(
         url,
         json={"access_token": wrong_access_token, "refresh_token": wrong_refresh_token},
     )
     assert response1.status_code == status.HTTP_401_UNAUTHORIZED
 
     # Попытка разлогиниться с правильными токенами
-    response2 = client.post(
+    response2 = await async_client.post(
         url,
         json={
             "access_token": access_token_moderator,
@@ -242,20 +217,20 @@ async def test_logout(
 
 @pytest.mark.asyncio
 async def test_refresh(
-    create_moderator, access_token_moderator, refresh_token_moderator
+    async_client, create_moderator, access_token_moderator, refresh_token_moderator
 ):
     refresh_url = f"{endpoint}/refresh"
     # Запрос на обновление с неправильными токенами
     wrong_access_token = access_token_moderator[::-1]
     wrong_refresh_token = refresh_token_moderator[::-1]
-    response1 = client.post(
+    response1 = await async_client.post(
         refresh_url,
         json={"access_token": wrong_access_token, "refresh_token": wrong_refresh_token},
     )
     assert response1.status_code == status.HTTP_401_UNAUTHORIZED
 
     # Запрос на обновление с правильными токенами
-    response2 = client.post(
+    response2 = await async_client.post(
         refresh_url,
         json={
             "access_token": access_token_moderator,
