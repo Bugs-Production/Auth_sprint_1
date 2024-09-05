@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import Page, paginate
+from fastapi_pagination.utils import disable_installed_extensions_check
 
 from api.auth_utils import check_admin, decode_token, oauth2_scheme
 from schemas.roles import RoleCreateSchema, RoleSchema
@@ -11,6 +12,8 @@ from services.exceptions import (ObjectAlreadyExistsException,
 from services.role import RoleService, get_role_service
 
 router = APIRouter()
+
+disable_installed_extensions_check()
 
 
 @router.get(

@@ -23,6 +23,14 @@ makemigrations:
 migrate:
 	docker exec users_fastapi alembic upgrade head
 
+.PHONY: up_test
+up_test:
+	docker-compose -f docker-compose.test.yml up -d --build
+
 .PHONY: tests
 tests:
-	docker exec users_fastapi pytest -s
+	docker exec -it auth_fastapi_tests pytest tests -s
+
+.PHONY: down_test
+down_test:
+	docker-compose -f docker-compose.test.yml down -v
