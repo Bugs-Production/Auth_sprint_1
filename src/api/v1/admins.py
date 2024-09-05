@@ -49,7 +49,7 @@ async def get_user_roles(
 
     check_allow_affect_user(payload, user_id)
 
-    if not auth_service.is_access_token_valid(access_token):
+    if not await auth_service.is_access_token_valid(access_token):
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
 
     try:
@@ -96,7 +96,7 @@ async def add_user_role(
 
     check_admin(payload)
 
-    if not auth_service.is_access_token_valid(access_token):
+    if not await auth_service.is_access_token_valid(access_token):
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
 
     try:
@@ -148,7 +148,7 @@ async def remove_user_role(
 
     check_admin(payload)
 
-    if not auth_service.is_access_token_valid(access_token):
+    if not await auth_service.is_access_token_valid(access_token):
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
 
     try:

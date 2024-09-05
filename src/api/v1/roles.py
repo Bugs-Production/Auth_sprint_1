@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import Page, paginate
+from fastapi_pagination.utils import disable_installed_extensions_check
 
 from api.auth_utils import check_admin, decode_token, oauth2_scheme
 from schemas.roles import RoleCreateSchema, RoleSchema
@@ -11,6 +12,8 @@ from services.exceptions import (ObjectAlreadyExistsException,
 from services.role import RoleService, get_role_service
 
 router = APIRouter()
+
+disable_installed_extensions_check()
 
 
 @router.get(
@@ -58,7 +61,7 @@ async def roles(
 
     check_admin(payload)
 
-    if not auth_service.is_access_token_valid(access_token):
+    if not await auth_service.is_access_token_valid(access_token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
         )
@@ -120,7 +123,7 @@ async def create_roles(
 
     check_admin(payload)
 
-    if not auth_service.is_access_token_valid(access_token):
+    if not await auth_service.is_access_token_valid(access_token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
         )
@@ -177,7 +180,7 @@ async def delete_roles(
 
     check_admin(payload)
 
-    if not auth_service.is_access_token_valid(access_token):
+    if not await auth_service.is_access_token_valid(access_token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
         )
@@ -232,7 +235,7 @@ async def update_roles(
 
     check_admin(payload)
 
-    if not auth_service.is_access_token_valid(access_token):
+    if not await auth_service.is_access_token_valid(access_token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
         )
