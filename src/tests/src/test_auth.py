@@ -126,7 +126,7 @@ async def test_login_success(async_client, create_moderator, access_token_modera
         (
             # Пользователь есть, но ввел неправильный пароль
             {
-                "login": "admin_user",
+                "login": constants.ADMIN_LOGIN,
                 "password": "wrong_admin_password",
             },
             status.HTTP_400_BAD_REQUEST,
