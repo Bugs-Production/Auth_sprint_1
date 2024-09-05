@@ -46,7 +46,7 @@ async def prepare_database():
 
 
 @pytest.fixture(scope="function")
-async def create_admin():
+async def admin():
     # Создание роли админа
     async with async_session_maker() as session:
         admin_role = Role(
@@ -70,10 +70,10 @@ async def create_admin():
 
 
 @pytest.fixture(scope="function")
-async def access_token_admin(create_admin):
+async def access_token_admin(admin):
     valid_till = datetime.now() + timedelta(hours=1)
     payload = {
-        "user_id": str(create_admin.id),
+        "user_id": str(admin.id),
         "exp": int(valid_till.timestamp()),
         "roles": ["admin"],
     }
@@ -83,7 +83,7 @@ async def access_token_admin(create_admin):
 
 
 @pytest.fixture(scope="function")
-async def create_moderator():
+async def moderator():
     # Создание роли модератора
     async with async_session_maker() as session:
         moderator_role = Role(id=uuid.uuid4(), title="moderator")
@@ -105,10 +105,10 @@ async def create_moderator():
 
 
 @pytest.fixture(scope="function")
-async def access_token_moderator(create_moderator):
+async def access_token_moderator(moderator):
     valid_till = datetime.now() + timedelta(hours=1)
     payload = {
-        "user_id": str(create_moderator.id),
+        "user_id": str(moderator.id),
         "exp": int(valid_till.timestamp()),
         "roles": ["moderator"],
     }
@@ -118,10 +118,10 @@ async def access_token_moderator(create_moderator):
 
 
 @pytest.fixture(scope="function")
-async def refresh_token_moderator(create_moderator):
+async def refresh_token_moderator(moderator):
     valid_till = datetime.now() + timedelta(hours=1)
     payload = {
-        "user_id": str(create_moderator.id),
+        "user_id": str(moderator.id),
         "exp": int(valid_till.timestamp()),
     }
 
@@ -129,7 +129,7 @@ async def refresh_token_moderator(create_moderator):
 
     async with async_session_maker() as session:
         refresh = RefreshToken(
-            user_id=create_moderator.id,
+            user_id=moderator.id,
             expires_at=valid_till,
             token=token,
         )

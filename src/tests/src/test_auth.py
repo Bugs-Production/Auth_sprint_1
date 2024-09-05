@@ -90,7 +90,7 @@ async def test_signup(async_client, user_data, expected_status, expected_fields)
 
 
 @pytest.mark.asyncio
-async def test_login_success(async_client, create_moderator, access_token_moderator):
+async def test_login_success(async_client, moderator, access_token_moderator):
     url = f"{endpoint}/login"
     login_response = await async_client.post(
         url=url,
@@ -108,7 +108,7 @@ async def test_login_success(async_client, create_moderator, access_token_modera
 
     # Проверяем историю логинов пользователя
 
-    login_history_url = f"/api/v1/users/{create_moderator.id}/login_history"
+    login_history_url = f"/api/v1/users/{moderator.id}/login_history"
 
     login_history_response = await async_client.get(
         login_history_url,
@@ -179,7 +179,7 @@ async def test_login_success(async_client, create_moderator, access_token_modera
 )
 @pytest.mark.asyncio
 async def test_login_failed(
-    async_client, create_admin, user_data, expected_status, expected_fields
+    async_client, admin, user_data, expected_status, expected_fields
 ):
     url = f"{endpoint}/login"
     response = await async_client.post(url=url, json=user_data)
@@ -193,7 +193,7 @@ async def test_login_failed(
 
 @pytest.mark.asyncio
 async def test_logout(
-    async_client, create_moderator, access_token_moderator, refresh_token_moderator
+    async_client, moderator, access_token_moderator, refresh_token_moderator
 ):
     url = f"{endpoint}/logout"
 
@@ -219,7 +219,7 @@ async def test_logout(
 
 @pytest.mark.asyncio
 async def test_refresh(
-    async_client, create_moderator, access_token_moderator, refresh_token_moderator
+    async_client, moderator, access_token_moderator, refresh_token_moderator
 ):
     refresh_url = f"{endpoint}/refresh"
     # Запрос на обновление с неправильными токенами
