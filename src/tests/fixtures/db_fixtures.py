@@ -148,3 +148,12 @@ async def role():
         await session.commit()
 
         return new_role
+
+
+@pytest.fixture(scope="function")
+async def create_multiple_roles():
+    async with async_session_maker() as session:
+        roles = [Role(id=uuid.uuid4(), title=f"role_{i}") for i in range(1, 11)]
+        session.add_all(roles)
+        await session.commit()
+        return roles
