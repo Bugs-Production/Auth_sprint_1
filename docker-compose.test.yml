@@ -3,10 +3,8 @@ services:
     image: postgres:16
     container_name: auth_postgres_tests
     restart: always
-    environment:
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_USER=auth
-      - POSTGRES_DB=auth_service_test
+    env_file:
+      - .env.test
     ports:
       - "127.0.0.1:15432:5432"
 
