@@ -78,7 +78,9 @@ class TestAuthLogout:
         ],
     )
     @pytest.mark.asyncio
-    async def test_signup(self, async_client, user_data, expected_status, expected_fields):
+    async def test_signup(
+        self, async_client, user_data, expected_status, expected_fields
+    ):
         response = await async_client.post(url=self.endpoint, json=user_data)
 
         assert response.status_code == expected_status
