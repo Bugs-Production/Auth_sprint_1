@@ -137,3 +137,14 @@ async def refresh_token_moderator(moderator):
         await session.commit()
 
     return token
+
+
+@pytest.fixture(scope="function")
+async def role():
+    # создание роли для тестов
+    async with async_session_maker() as session:
+        new_role = Role(id=uuid.uuid4(), title="new role")
+        session.add(new_role)
+        await session.commit()
+
+        return new_role
