@@ -63,11 +63,13 @@ class UserService:
                 .where(db_models.User.id == user_id)
                 .options(selectinload(db_models.User.login_history))
             )
-            if not results:
-                raise ObjectNotFoundError
 
             user = results.scalars().first()
+            if not user:
+                raise ObjectNotFoundError
+
             login_history = user.login_history
+
             return login_history
 
     async def create_user(self, user_data: CreateUserSchema) -> db_models.User:

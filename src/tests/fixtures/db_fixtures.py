@@ -10,7 +10,7 @@ from sqlalchemy.pool import NullPool
 from core.config import JWT_ALGORITHM, settings
 from db.postgres import Base, get_postgres_session
 from main import app
-from models import RefreshToken, Role, User
+from models import LoginHistory, RefreshToken, Role, User
 from tests import constants
 
 DATABASE_URL_TEST = settings.postgres_url
@@ -186,3 +186,21 @@ def headers_moderator(access_token_moderator):
 def headers_admin_invalid(access_token_admin):
     wrong_access_token = access_token_admin[::-1]
     return {"Authorization": f"Bearer {wrong_access_token}"}
+
+
+@pytest.fixture(scope="function")
+async def login_multiple_times(moderator):
+    async with async_session_maker() as session:
+        login_history = [
+            LoginHistory(
+                user_id=moderator.id,
+                event_date=datetime.now() - timedelta(days=i),
+                success=True,
+            )
+            for i in range(0, 5)
+        ]
+
+        session.add_all(login_history)
+        await session.commit()
+
+        return login_history
