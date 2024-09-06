@@ -39,14 +39,14 @@ class TestAdminAddRolesApi:
         self,
         async_client,
         moderator,
-        access_token_admin,
+        headers_admin,
         role_id,
         role,
         expected_answer,
     ):
         response = await async_client.post(
             url=self.endpoint + moderator.id + "/roles",
-            headers={"Authorization": f"Bearer {access_token_admin}"},
+            headers=headers_admin,
             json={
                 "role_id": role_id,
             },
@@ -72,14 +72,14 @@ class TestAdminAddRolesApi:
         self,
         async_client,
         moderator,
-        access_token_moderator,
+        headers_moderator,
         role,
         role_id,
         expected_answer,
     ):
         response = await async_client.post(
             url=self.endpoint + moderator.id + "/roles",
-            headers={"Authorization": f"Bearer {access_token_moderator}"},
+            headers=headers_moderator,
             json={
                 "role_id": role_id,
             },

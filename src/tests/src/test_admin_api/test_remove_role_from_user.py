@@ -40,14 +40,14 @@ class TestAdminRemoveRolesApi:
         async_client,
         moderator,
         add_test_role_to_moderator,
-        access_token_admin,
+        headers_admin,
         role_id,
         role,
         expected_answer,
     ):
         response = await async_client.delete(
             url=self.endpoint + moderator.id + "/roles/" + role_id,
-            headers={"Authorization": f"Bearer {access_token_admin}"},
+            headers=headers_admin,
         )
         assert response.status_code == expected_answer["status"]
         assert response.json() == expected_answer["answer"]
@@ -71,14 +71,14 @@ class TestAdminRemoveRolesApi:
         async_client,
         moderator,
         add_test_role_to_moderator,
-        access_token_moderator,
+        headers_moderator,
         role_id,
         role,
         expected_answer,
     ):
         response = await async_client.delete(
             url=self.endpoint + moderator.id + "/roles/" + role_id,
-            headers={"Authorization": f"Bearer {access_token_moderator}"},
+            headers=headers_moderator,
         )
         assert response.status_code == expected_answer["status"]
         assert response.json() == expected_answer["answer"]

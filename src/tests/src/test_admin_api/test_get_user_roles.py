@@ -37,7 +37,7 @@ class TestAdminGetRolesApi:
         async_client,
         moderator,
         add_test_role_to_moderator,
-        access_token_admin,
+        headers_admin,
         user_id,
         role,
         expected_answer,
@@ -45,7 +45,7 @@ class TestAdminGetRolesApi:
     ):
         response = await async_client.get(
             url=self.endpoint + moderator.id + "/roles",
-            headers={"Authorization": f"Bearer {access_token_admin}"},
+            headers=headers_admin,
             params=pagination_data,
         )
         assert response.status_code == expected_answer["status"]
@@ -74,7 +74,7 @@ class TestAdminGetRolesApi:
         async_client,
         moderator,
         add_test_role_to_moderator,
-        access_token_moderator,
+        headers_moderator,
         user_id,
         role,
         expected_answer,
@@ -82,7 +82,7 @@ class TestAdminGetRolesApi:
     ):
         response = await async_client.get(
             url=self.endpoint + user_id + "/roles",
-            headers={"Authorization": f"Bearer {access_token_moderator}"},
+            headers=headers_moderator,
             params=pagination_data,
         )
         assert response.status_code == expected_answer["status"]
