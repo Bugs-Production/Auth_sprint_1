@@ -3,13 +3,14 @@ from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 from werkzeug.security import generate_password_hash
 
+from core.config import settings
 from db import postgres
 from models.roles import Role
 from models.user import User
 
 
 async def create_superuser(login: str, password: str, first_name: str, last_name: str):
-    engine = create_async_engine(postgres.dsn, echo=True, future=True)
+    engine = create_async_engine(postgres.dsn, echo=settings.engine_echo, future=True)
     async_session = async_sessionmaker(
         bind=engine, expire_on_commit=False, class_=AsyncSession
     )
