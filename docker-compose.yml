@@ -20,8 +20,6 @@ services:
       - redis
     volumes:
       - ./src:/src
-    ports:
-      - "8000:8000"
 
   redis:
     image: redis:latest
@@ -32,6 +30,16 @@ services:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
     env_file:
       - .env
+
+  nginx:
+    build:
+      dockerfile: ./Dockerfile
+      context: ./nginx
+    container_name: users_nginx
+    depends_on:
+      - fastapi
+    ports:
+      - "80:80"
 
 
 volumes:
