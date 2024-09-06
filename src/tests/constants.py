@@ -13,3 +13,5 @@ TEST_ROLE_UUID = "5e796639-9b3f-49c3-9c59-9c3302ae5e59"
 ROLE_NOT_FOUND_RESPONSE = {"detail": "role not found"}
 FORBIDDEN_RESPONSE = {"detail": "Forbidden"}
 NOT_AUTHENTICATED_RESPONSE = {"detail": "Not authenticated"}
+
+USER_NOT_FOUND_RESPONSE = {"detail": "user not found"}

@@ -23,8 +23,7 @@ def decode_token(token: str) -> dict[str, Any] | None:
 
 def check_allow_affect_user(auth_data: dict[str, Any], user_id: UUID):
     """
-    Проверяет может ли пользователь, отправивший запрос,
-    производить операции над пользователем с id=user_id
+    Операции может производить только admin или пользователь со своим профилем
     """
     if "admin" not in auth_data["roles"] and str(user_id) != auth_data["user_id"]:
         raise HTTPException(status_code=HTTPStatus.FORBIDDEN)

@@ -10,21 +10,11 @@ class TestApiDeleteRoles:
     def setup_method(self):
         self.endpoint = "/api/v1/roles/"
 
-    # Фикстура для заголовков с токеном администратора
-    @pytest.fixture
-    def admin_headers(self, access_token_admin):
-        return {"Authorization": f"Bearer {access_token_admin}"}
-
-    # Фикстура для заголовков с токеном модератора
-    @pytest.fixture
-    def moderator_headers(self, access_token_moderator):
-        return {"Authorization": f"Bearer {access_token_moderator}"}
-
     @pytest.mark.asyncio
-    async def test_successfully_delete_role(self, async_client, admin_headers, role):
+    async def test_successfully_delete_role(self, async_client, headers_admin, role):
         response = await async_client.delete(
             f"{self.endpoint}{role.id}",
-            headers=admin_headers,
+            headers=headers_admin,
         )
 
         assert (
@@ -35,11 +25,11 @@ class TestApiDeleteRoles:
         ), "Detail message mismatch"
 
     @pytest.mark.asyncio
-    async def test_not_found_delete_role(self, async_client, admin_headers):
+    async def test_not_found_delete_role(self, async_client, headers_admin):
         random_id = uuid.uuid4()
         response = await async_client.delete(
             f"{self.endpoint}{random_id}",
-            headers=admin_headers,
+            headers=headers_admin,
         )
 
         assert (
@@ -51,11 +41,11 @@ class TestApiDeleteRoles:
 
     @pytest.mark.asyncio
     async def test_moderator_user_delete_role(
-        self, async_client, moderator_headers, role
+        self, async_client, headers_moderator, role
     ):
         response = await async_client.delete(
             f"{self.endpoint}{role.id}",
-            headers=moderator_headers,
+            headers=headers_moderator,
         )
 
         assert (

@@ -10,7 +10,7 @@ from sqlalchemy.pool import NullPool
 from core.config import JWT_ALGORITHM, settings
 from db.postgres import Base, get_postgres_session
 from main import app
-from models import RefreshToken, Role, User
+from models import LoginHistory, RefreshToken, Role, User
 from tests import constants
 
 DATABASE_URL_TEST = settings.postgres_url
@@ -167,3 +167,40 @@ async def add_test_role_to_moderator(moderator, role):
         moderator.roles.append(role)
         session.add(moderator)
         await session.commit()
+
+
+# Фикстура для заголовков авторизации администратора
+@pytest.fixture(scope="function")
+def headers_admin(access_token_admin):
+    return {"Authorization": f"Bearer {access_token_admin}"}
+
+
+# Фикстура для заголовков авторизации модератора
+@pytest.fixture(scope="function")
+def headers_moderator(access_token_moderator):
+    return {"Authorization": f"Bearer {access_token_moderator}"}
+
+
+# Фикстура для заголовков авторизации с невалидным access_token админа
+@pytest.fixture(scope="function")
+def headers_admin_invalid(access_token_admin):
+    wrong_access_token = access_token_admin[::-1]
+    return {"Authorization": f"Bearer {wrong_access_token}"}
+
+
+@pytest.fixture(scope="function")
+async def login_multiple_times(moderator):
+    async with async_session_maker() as session:
+        login_history = [
+            LoginHistory(
+                user_id=moderator.id,
+                event_date=datetime.now() - timedelta(days=i),
+                success=True,
+            )
+            for i in range(0, 5)
+        ]
+
+        session.add_all(login_history)
+        await session.commit()
+
+        return login_history
