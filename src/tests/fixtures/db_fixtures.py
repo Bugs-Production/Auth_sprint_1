@@ -167,3 +167,22 @@ async def add_test_role_to_moderator(moderator, role):
         moderator.roles.append(role)
         session.add(moderator)
         await session.commit()
+
+
+# Фикстура для заголовков авторизации администратора
+@pytest.fixture(scope="function")
+def headers_admin(access_token_admin):
+    return {"Authorization": f"Bearer {access_token_admin}"}
+
+
+# Фикстура для заголовков авторизации модератора
+@pytest.fixture(scope="function")
+def headers_moderator(access_token_moderator):
+    return {"Authorization": f"Bearer {access_token_moderator}"}
+
+
+# Фикстура для заголовков авторизации с невалидным access_token админа
+@pytest.fixture(scope="function")
+def headers_admin_invalid(access_token_admin):
+    wrong_access_token = access_token_admin[::-1]
+    return {"Authorization": f"Bearer {wrong_access_token}"}

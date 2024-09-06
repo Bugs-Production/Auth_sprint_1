@@ -13,15 +13,6 @@ class TestApiPostRoles:
     def role_data(self):
         return {"title": "new role"}
 
-    # Фикстура для заголовков авторизации
-    @pytest.fixture
-    def headers_admin(self, access_token_admin):
-        return {"Authorization": f"Bearer {access_token_admin}"}
-
-    @pytest.fixture
-    def headers_moderator(self, access_token_moderator):
-        return {"Authorization": f"Bearer {access_token_moderator}"}
-
     @pytest.mark.asyncio
     async def test_successfully_create_role(
         self, async_client, role_data, headers_admin

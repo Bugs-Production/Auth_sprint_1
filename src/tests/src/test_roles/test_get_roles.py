@@ -12,16 +12,6 @@ class TestApiGetRoles:
     def setup_method(self):
         self.endpoint = "/api/v1/roles/"
 
-    # Фикстура для заголовков авторизации администратора
-    @pytest.fixture
-    def headers_admin(self, access_token_admin):
-        return {"Authorization": f"Bearer {access_token_admin}"}
-
-    # Фикстура для заголовков авторизации модератора
-    @pytest.fixture
-    def headers_moderator(self, access_token_moderator):
-        return {"Authorization": f"Bearer {access_token_moderator}"}
-
     @pytest.mark.asyncio
     async def test_admin_can_successfully_get_roles(self, async_client, headers_admin):
         response = await async_client.get(self.endpoint, headers=headers_admin)

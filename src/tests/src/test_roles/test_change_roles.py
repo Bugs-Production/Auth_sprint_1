@@ -15,22 +15,12 @@ class TestApiPutRoles:
     def request_data(self, role):
         return {"id": str(role.id), "title": "new role 2"}
 
-    # Фикстура для заголовков с токеном администратора
-    @pytest.fixture
-    def admin_headers(self, access_token_admin):
-        return {"Authorization": f"Bearer {access_token_admin}"}
-
-    # Фикстура для заголовков с токеном модератора
-    @pytest.fixture
-    def moderator_headers(self, access_token_moderator):
-        return {"Authorization": f"Bearer {access_token_moderator}"}
-
     @pytest.mark.asyncio
     async def test_successfully_change_role(
-        self, async_client, admin_headers, request_data, role
+        self, async_client, headers_admin, request_data, role
     ):
         response = await async_client.put(
-            f"{self.endpoint}{role.id}", headers=admin_headers, json=request_data
+            f"{self.endpoint}{role.id}", headers=headers_admin, json=request_data
         )
 
         assert (
@@ -42,11 +32,11 @@ class TestApiPutRoles:
 
     @pytest.mark.asyncio
     async def test_not_found_change_role(
-        self, async_client, admin_headers, request_data
+        self, async_client, headers_admin, request_data
     ):
         random_id = uuid.uuid4()
         response = await async_client.put(
-            f"{self.endpoint}{random_id}", headers=admin_headers, json=request_data
+            f"{self.endpoint}{random_id}", headers=headers_admin, json=request_data
         )
 
         assert (
@@ -56,10 +46,10 @@ class TestApiPutRoles:
 
     @pytest.mark.asyncio
     async def test_moderator_change_role(
-        self, async_client, moderator_headers, request_data, role
+        self, async_client, headers_moderator, request_data, role
     ):
         response = await async_client.put(
-            f"{self.endpoint}{role.id}", headers=moderator_headers, json=request_data
+            f"{self.endpoint}{role.id}", headers=headers_moderator, json=request_data
         )
 
         assert (
