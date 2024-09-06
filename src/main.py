@@ -16,7 +16,9 @@ from db import postgres, redis
 async def lifespan(app: FastAPI):
     try:
         redis.redis = Redis(host=settings.redis_host, port=settings.redis_port)
-        postgres.engine = create_async_engine(postgres.dsn, echo=True, future=True)
+        postgres.engine = create_async_engine(
+            postgres.dsn, echo=settings.sql_echo, future=True
+        )
         postgres.async_session = async_sessionmaker(
             bind=postgres.engine, expire_on_commit=False, class_=AsyncSession
         )

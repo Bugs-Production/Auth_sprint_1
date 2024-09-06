@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     postgres_url: str = Field(
         "postgresql+asyncpg://postgres:postgres@db:5432/foo", alias="POSTGRES_URL"
     )
+    sql_echo: bool = Field(False, alias="SQL_ECHO")
     redis_host: str = Field("127.0.0.1", alias="REDIS_HOST")
     redis_port: int = Field(6379, alias="REDIS_PORT")
 

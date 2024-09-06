@@ -17,7 +17,9 @@ DATABASE_URL_TEST = settings.postgres_url
 
 # Database setup
 
-engine_test = create_async_engine(DATABASE_URL_TEST, poolclass=NullPool, echo=False)
+engine_test = create_async_engine(
+    DATABASE_URL_TEST, poolclass=NullPool, echo=settings.sql_echo
+)
 async_session_maker = async_sessionmaker(
     bind=engine_test, class_=AsyncSession, expire_on_commit=False
 )
